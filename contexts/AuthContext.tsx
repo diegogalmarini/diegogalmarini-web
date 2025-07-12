@@ -10,13 +10,16 @@ import {
   GoogleAuthProvider,
   signOut,
   sendEmailVerification,
-  updateProfile
+  updateProfile,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
+// Interfaz para definir la forma del contexto de autenticación.
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
+  checkIfEmailExists: (email: string) => Promise<boolean>; // Nueva función
   registerWithEmail: (name:string, email: string, password: string) => Promise<FirebaseUser>;
   loginWithEmail: (email: string, password: string) => Promise<FirebaseUser>;
   signInWithGoogle: () => Promise<FirebaseUser>;
@@ -31,7 +34,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // La comprobación de `auth` ya no es necesaria, ya que firebaseConfig ahora garantiza que no sea nulo.
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -39,10 +41,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
+  // Nueva función para comprobar si un email ya está registrado.
+  const checkIfEmailExists = async (email: string): Promise<boolean> => {
+    try {
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+      return methods.length > 0;
+    } catch (error) {
+      // Errores como 'invalid-email' se pueden ignorar aquí.
+      // Devolvemos `false` para no bloquear al usuario por un email mal formado aún.
+      return false;
+    }
+  };
+
   const registerWithEmail = async (name: string, email: string, password: string): Promise<FirebaseUser> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
-    // Manually reload the user to get the updated profile
     await userCredential.user.reload();
     const updatedUser = auth.currentUser;
     if (updatedUser) {
@@ -87,6 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = {
     user,
     loading,
+    checkIfEmailExists, // Exponemos la nueva función
     registerWithEmail,
     loginWithEmail,
     signInWithGoogle,

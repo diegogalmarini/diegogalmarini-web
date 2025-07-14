@@ -1,21 +1,53 @@
 
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { FaGoogle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
-import { IoMenu, IoClose } from 'react-icons/io5';
+import { IoMenu, IoClose, IoLogOutOutline } from 'react-icons/io5';
+
+// --- Sub-Components ---
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
-  <NavLink
-    to={to}
-    onClick={onClick}
-    className={({ isActive }) =>
-      `nav-link-base text-base text-center block w-full sm:w-auto ${isActive ? 'nav-link-active' : 'nav-link-inactive'}`
-    }
-  >
+  <NavLink to={to} onClick={onClick} className={({ isActive }) => `nav-link-base text-base text-center block w-full sm:w-auto ${isActive ? 'nav-link-active' : 'nav-link-inactive'}`}>
     {children}
   </NavLink>
 );
+
+const UserProfile: React.FC = () => {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const [isOpen, setIsOpen] = React.useState(false);
+    
+    if(!user) return null;
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/');
+    }
+
+    return (
+        <div className="relative">
+            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center space-x-2">
+                <img 
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email}&background=0284c7&color=fff&rounded=true`} 
+                    alt="Perfil" 
+                    className="w-8 h-8 rounded-full"
+                />
+                 <span className="text-sm font-semibold text-[var(--text-color)] hidden md:block">{user.displayName || user.email?.split('@')[0]}</span>
+            </button>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 z-50">
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-[var(--text-color)] hover:bg-[var(--input-bg)]">Mi Cuenta</Link>
+                    <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-red-400 hover:bg-[var(--input-bg)]">
+                        <IoLogOutOutline className="mr-2"/> Cerrar Sesión
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+}
+
+// --- Header ---
 
 const Header: React.FC<{ onBookCallClick: () => void }> = ({ onBookCallClick }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -35,15 +67,15 @@ const Header: React.FC<{ onBookCallClick: () => void }> = ({ onBookCallClick }) 
               <NavItem to="/services">Servicios</NavItem>
               <NavItem to="/portfolio">Casos de Estudio</NavItem>
               <NavItem to="/about">Sobre Mí</NavItem>
-              <NavItem to={user ? "/dashboard" : "/login"}>
-                {user ? "Dashboard" : "Acceso"}
-              </NavItem>
+              {!user && <NavItem to="/login">Acceso</NavItem>}
             </nav>
           </div>
-          <div className="hidden md:flex items-center justify-end">
-             <button onClick={onBookCallClick} className="btn-cta text-sm px-5 py-2.5">
-                Agendar Llamada
-            </button>
+          <div className="hidden md:flex items-center justify-end space-x-4">
+             {user ? <UserProfile/> : (
+                <button onClick={onBookCallClick} className="btn-cta text-sm px-5 py-2.5">
+                    Agendar Llamada
+                </button>
+             )}
           </div>
           <div className="md:hidden flex items-center">
             <button onClick={() => setIsOpen(!isOpen)} className="text-[var(--text-color)] text-3xl z-50">
@@ -60,7 +92,7 @@ const Header: React.FC<{ onBookCallClick: () => void }> = ({ onBookCallClick }) 
             <NavItem to="/portfolio" onClick={closeMenu}>Casos de Estudio</NavItem>
             <NavItem to="/about" onClick={closeMenu}>Sobre Mí</NavItem>
             <NavItem to={user ? "/dashboard" : "/login"} onClick={closeMenu}>
-              {user ? "Dashboard" : "Acceso"}
+              {user ? "Mi Cuenta" : "Acceso"}
             </NavItem>
             <button onClick={() => { onBookCallClick(); closeMenu(); }} className="btn-cta mt-4 w-full text-sm py-3">
                 Agendar Llamada
@@ -72,6 +104,8 @@ const Header: React.FC<{ onBookCallClick: () => void }> = ({ onBookCallClick }) 
   );
 };
 
+// --- Footer & Layout ---
+
 const Footer: React.FC = () => (
   <footer className="mt-32 bg-[var(--card-bg)] border-t border-[var(--border-color)] backdrop-blur-lg transition-colors duration-300">
     <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
@@ -79,7 +113,7 @@ const Footer: React.FC = () => (
         <div className="space-y-8 xl:col-span-1">
           <h3 className="text-xl font-bold text-[var(--text-color)]">Diego Galmarini</h3>
           <p className="text-[var(--text-muted)] text-base">
-            Transformando ideas en productos tecnológicos escalables, rentables y desplegados.
+            Transformando ideas en productos tecnológicos escalables.
           </p>
           <div className="flex items-center space-x-2 p-3 rounded-xl bg-[var(--input-bg)]">
             <FaGoogle />

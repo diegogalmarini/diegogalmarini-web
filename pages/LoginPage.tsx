@@ -1,106 +1,128 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/common';
+import { useNavigate, Link } from 'react-router-dom';
 import { IoMailOutline, IoLockClosedOutline, IoLogoGoogle } from 'react-icons/io5';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { loginWithEmail, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
+    const { loginWithEmail, signInWithGoogle, sendPasswordReset } = useAuth();
+    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [message, setMessage] = useState(''); // Para mensajes de éxito (ej: email de reseteo enviado)
+    const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (email && password) {
-      setLoading(true);
-      try {
-        await loginWithEmail(email, password);
-        navigate('/dashboard');
-      } catch (err: any) {
-        // More specific error messages for better UX
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-            setError('Email o contraseña incorrectos.');
-        } else {
-            setError('Error al iniciar sesión. Inténtalo de nuevo.');
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            await loginWithEmail(email, password);
+            navigate('/dashboard');
+        } catch (error) {
+            setError('Email o contraseña incorrectos. Por favor, inténtalo de nuevo.');
         }
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-  
-  const handleGoogleLogin = async () => {
-    setError('');
-    setLoading(true);
-    try {
-        await signInWithGoogle();
-        navigate('/dashboard');
-    } catch (err: any) {
-        console.error("Google Sign-In Error:", err);
-        if (err.code === 'auth/popup-blocked') {
-            setError('La ventana emergente de Google fue bloqueada por el navegador. Por favor, habilítalas.');
-        } else if (err.code === 'auth/operation-not-allowed') {
-            setError('El inicio de sesión con Google no está habilitado. Actívalo en tu consola de Firebase.');
-        } else if (err.code === 'auth/unauthorized-domain') {
-             setError('Este dominio no está autorizado para la autenticación. Añádelo en la consola de Firebase.');
-        } else {
-            setError('Error al iniciar sesión con Google. Inténtalo de nuevo.');
-        }
-    } finally {
-        setLoading(false);
-    }
-  }
+        setIsLoading(false);
+    };
 
-  return (
-    <div className="py-28">
-      <div className="max-w-md mx-auto px-4">
-        <Card>
-          <h1 className="text-3xl font-bold text-center text-[var(--text-color)] mb-2">Acceso de Usuario</h1>
-          <p className="text-center text-[var(--text-muted)] mb-8">Inicia sesión para gestionar tus consultas.</p>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="relative">
-                <IoMailOutline className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Introduce tu email"
-                  required
-                  className="glass-input"
-                />
+    const handleGoogleSignIn = async () => {
+        setIsLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            await signInWithGoogle();
+            navigate('/dashboard');
+        } catch (error) {
+            setError('No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
+        }
+        setIsLoading(false);
+    };
+
+    const handlePasswordReset = async () => {
+        if (!email) {
+            setError('Por favor, introduce tu email para resetear la contraseña.');
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            await sendPasswordReset(email);
+            setMessage('¡Hecho! Se ha enviado un enlace para resetear tu contraseña a tu correo.');
+        } catch (error) {
+            setError('No se pudo enviar el correo de reseteo. Verifica que el email sea correcto.');
+        }
+        setIsLoading(false);
+    };
+
+
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-transparent px-4">
+            <div className="w-full max-w-md">
+                <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-8">
+                    <h1 className="text-3xl font-bold text-center text-[var(--text-color)] mb-2">Acceso de Usuario</h1>
+                    <p className="text-center text-[var(--text-muted)] mb-8">Inicia sesión para gestionar tus consultas.</p>
+                    
+                    {error && <p className="bg-red-500/10 text-red-500 text-sm font-semibold p-3 rounded-lg mb-4">{error}</p>}
+                    {message && <p className="bg-green-500/10 text-green-400 text-sm font-semibold p-3 rounded-lg mb-4">{message}</p>}
+                    
+                    <form onSubmit={handleLogin} className="space-y-6">
+                        <div className="relative">
+                            <IoMailOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Email"
+                                required
+                                className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-3 px-12 text-[var(--text-color)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div className="relative">
+                             <IoLockClosedOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Contraseña"
+                                required
+                                className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-3 px-12 text-[var(--text-color)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        
+                        <div className="text-right">
+                            <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-blue-400 hover:underline">
+                                ¿Has olvidado tu contraseña?
+                            </button>
+                        </div>
+
+                        <button type="submit" className="w-full btn-cta py-3 font-bold" disabled={isLoading}>
+                            {isLoading ? 'Accediendo...' : 'Iniciar Sesión'}
+                        </button>
+                    </form>
+
+                     <div className="relative my-6 text-center">
+                        <span className="absolute top-1/2 left-0 w-full h-px bg-[var(--border-color)]"></span>
+                        <span className="relative bg-[var(--card-bg)] px-2 text-sm text-[var(--text-muted)]">o</span>
+                    </div>
+
+                    <button onClick={handleGoogleSignIn} className="w-full flex items-center justify-center bg-white text-black py-3 rounded-lg hover:bg-gray-200 font-bold disabled:opacity-50 transition-colors" disabled={isLoading}>
+                        <IoLogoGoogle className="mr-3" /> Acceder con Google
+                    </button>
+                    
+                     <p className="text-center text-sm text-[var(--text-muted)] mt-8">
+                        ¿No tienes una cuenta?{' '}
+                        <Link to="/" onClick={(e) => { e.preventDefault(); /* Aquí iría la lógica para abrir el modal de registro */ }} className="font-medium text-blue-400 hover:underline">
+                            Regístrate
+                        </Link>
+                    </p>
+
+                </div>
             </div>
-            <div className="relative">
-                <IoLockClosedOutline className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Contraseña"
-                  required
-                  className="glass-input"
-                />
-            </div>
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            <button type="submit" className="w-full btn-cta py-3" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </form>
-           <div className="my-6 flex items-center">
-                <div className="flex-grow border-t border-[var(--border-color)]"></div>
-                <span className="flex-shrink mx-4 text-[var(--text-muted)] text-sm">o</span>
-                <div className="flex-grow border-t border-[var(--border-color)]"></div>
-            </div>
-             <button onClick={handleGoogleLogin} disabled={loading} className="w-full flex items-center justify-center bg-white/90 dark:bg-white/10 border border-transparent dark:border-[var(--border-color)] text-gray-800 dark:text-white font-semibold py-3 px-4 rounded-xl hover:bg-white dark:hover:bg-white/20 transition disabled:opacity-50">
-                <IoLogoGoogle className="mr-2 text-lg text-[#4285F4]" /> {loading ? 'Procesando...' : 'Continuar con Google'}
-            </button>
-        </Card>
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default LoginPage;

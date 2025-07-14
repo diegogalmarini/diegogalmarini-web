@@ -1,240 +1,271 @@
 
 import React, { useState, useEffect } from 'react';
-import { IoClose, IoPersonOutline, IoLockClosedOutline, IoMailOutline, IoLogoGoogle } from 'react-icons/io5';
-import { useAuth } from '../contexts/AuthContext';
 import { bookingPlaceholders } from '../constants';
+import { 
+  IoPersonOutline, 
+  IoCalendarOutline, 
+  IoCardOutline, 
+  IoCheckmarkCircleOutline, 
+  IoClose,
+  IoCheckmark,
+  IoChevronBack,
+  IoChevronForward,
+  IoMailOutline,
+} from 'react-icons/io5';
+import { useAuth } from '../contexts/AuthContext';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { User } from 'firebase/auth';
 
-// --- Types and Constants ---
+// --- Types & Interfaces ---
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User | null;
 }
-const STEPS = {
-  DETAILS: 1, LOGIN: 2, REGISTER: 3, SERVICES: 4, CONFIRMATION: 5, SUCCESS: 6,
+
+// --- Re-implementing the Original, Correct ProgressBar ---
+const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
+    const steps = [
+        { num: 1, icon: <IoPersonOutline />, label: 'Problema' },
+        { num: 2, icon: <IoCardOutline />, label: 'Plan' },
+        { num: 3, icon: <IoCalendarOutline />, label: 'Agenda' },
+        { num: 4, icon: <IoCheckmarkCircleOutline />, label: 'Confirmar' }
+    ];
+
+    return (
+        <div className="flex justify-between items-center mb-12 mt-12 px-4 md:px-8">
+            {steps.map((s, index) => (
+                <React.Fragment key={s.num}>
+                    <div className="flex flex-col items-center z-10">
+                        <div className={`progress-step-icon ${step >= s.num ? 'progress-step-icon-active' : ''}`}>
+                            {s.icon}
+                        </div>
+                        <p className={`text-xs mt-2 font-semibold ${step >= s.num ? 'text-[var(--primary-color)]' : 'text-[var(--text-muted)]'}`}>{s.label}</p>
+                    </div>
+                    {index < steps.length - 1 && <div className={`progress-step-track ${step > s.num ? 'progress-step-track-active' : ''}`}></div>}
+                </React.Fragment>
+            ))}
+        </div>
+    );
 };
 
-// --- Componente Principal ---
-const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, user }) => {
-  const { checkIfEmailExists, registerWithEmail, loginWithEmail, signInWithGoogle } = useAuth();
-
-  const [step, setStep] = useState(STEPS.DETAILS);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+// --- Main Modal Component ---
+const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+  const [step, setStep] = useState(1);
+  const [placeholder, setPlaceholder] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [problemDescription, setProblemDescription] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [contactInfo, setContactInfo] = useState({ name: '', email: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const minChars = 100;
+
+  // --- State and Effect Management ---
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+  
+  const resetState = () => {
+    setStep(1);
+    setTermsAccepted(false);
+    setSelectedPlan(null);
+    setProblemDescription('');
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setCurrentMonth(new Date());
+    setError('');
+    setIsLoading(false);
+    setContactInfo({ name: user?.displayName || '', email: user?.email || '' });
+  };
+
   useEffect(() => {
     if (isOpen) {
-      const initialStep = user ? STEPS.SERVICES : STEPS.DETAILS;
-      setStep(initialStep);
-      setEmail('');
-      setName('');
-      setPassword('');
-      setSelectedServices([]);
-      setError('');
-      setIsLoading(false);
+      resetState();
+    } else {
+      setTimeout(resetState, 300);
     }
   }, [isOpen, user]);
 
-  const handleNextStep = () => setStep(prev => prev + 1);
-  const handlePrevStep = () => setStep(prev => prev - 1);
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsLoading(true);
-    setError('');
-    try {
-      const emailExists = await checkIfEmailExists(email);
-      setStep(emailExists ? STEPS.LOGIN : STEPS.REGISTER);
-    } catch (err) {
-      setError("Ocurrió un error. Inténtalo de nuevo.");
-    }
-    setIsLoading(false);
-  };
-
-  const handleRegistration = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    try {
-      await registerWithEmail(name, email, password);
-      setStep(STEPS.SERVICES);
-    } catch (err: any) {
-      setError(err.code === 'auth/email-already-in-use' ? 'Este email ya está registrado.' : 'Error al crear la cuenta.');
-    }
-    setIsLoading(false);
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    try {
-      await loginWithEmail(email, password);
-      setStep(STEPS.SERVICES);
-    } catch (err: any)      {
-      setError("Email o contraseña incorrectos. Por favor, verifica tus datos.");
-    }
-    setIsLoading(false);
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    let currentPlaceholderIndex = 0;
+    let typingTimeout: ReturnType<typeof setTimeout>;
+    const type = () => {
+      const fullText = bookingPlaceholders[currentPlaceholderIndex];
+      if (!fullText) return;
+      let i = 0;
+      const typeChar = () => {
+        if (i < fullText.length) {
+          setPlaceholder(fullText.substring(0, i + 1));
+          i++;
+          typingTimeout = setTimeout(typeChar, 50);
+        } else {
+          typingTimeout = setTimeout(() => {
+             currentPlaceholderIndex = (currentPlaceholderIndex + 1) % bookingPlaceholders.length;
+             type();
+          }, 3000);
+        }
+      };
+      typeChar();
+    };
+    type();
+    return () => clearTimeout(typingTimeout);
+  }, [isOpen]);
   
-  const handleGoogleSignIn = async () => {
+  useEffect(() => {
+    setSelectedTime(null); // Reset time when date changes
+  }, [selectedDate]);
+
+  // --- Navigation & Submission ---
+  const handleNext = () => {
+    if (step === 2 && selectedPlan === 'free') {
+      setStep(4); // Skip calendar for free plan
+    } else {
+      setStep(s => s + 1);
+    }
+  };
+  const handleBack = () => {
+     if (step === 4 && selectedPlan === 'free') {
+      setStep(2); // Go back to plan selection from confirm if plan was free
+    } else {
+      setStep(s => s - 1);
+    }
+  };
+  const handleSubmit = async () => {
     setIsLoading(true);
     setError('');
-    try {
-        await signInWithGoogle();
-        setStep(STEPS.SERVICES);
-    } catch (err: any) {
-        console.error(err);
-        setError("No se pudo iniciar sesión con Google. Revisa que el dominio esté autorizado en Firebase.");
-    }
-    setIsLoading(false);
-  }
-
-  const toggleService = (service: string) => setSelectedServices(prev =>
-    prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
-  );
-
-  const handleConfirmBooking = async () => {
-    if (!user) {
-      setError("Error: Debes estar conectado para confirmar.");
-      return;
-    }
-    setIsLoading(true);
     try {
       const db = getFirestore();
       await addDoc(collection(db, "consultations"), {
-        userId: user.uid, userName: user.displayName, userEmail: user.email,
-        services: selectedServices, status: 'Pendiente', createdAt: serverTimestamp(),
+        userId: user ? user.uid : null,
+        userName: contactInfo.name,
+        userEmail: contactInfo.email,
+        description: problemDescription,
+        plan: selectedPlan,
+        scheduledDate: selectedDate,
+        scheduledTime: selectedTime,
+        status: 'Pendiente',
+        createdAt: serverTimestamp(),
       });
-      setStep(STEPS.SUCCESS);
+      setStep(5); // Success step
     } catch (err) {
-      setError("No se pudo guardar tu consulta. Inténtalo de nuevo.");
+      setError("No se pudo enviar la consulta. Inténtalo de nuevo.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  // --- Step Content Rendering ---
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div>
+            <h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 1: Describe tu Proyecto en Detalle</h2>
+            <p className="text-center text-[var(--text-muted)] mb-6">Dame todo el contexto posible para que nuestra sesión sea de máximo valor.</p>
+            <textarea rows={6} className="glass-textarea" placeholder={placeholder} value={problemDescription} onChange={(e) => setProblemDescription(e.target.value)} maxLength={5000}></textarea>
+            <p className={`text-right text-xs mt-2 pr-1 ${problemDescription.length >= minChars ? 'text-green-500' : 'text-yellow-500 font-semibold'}`}>
+              {problemDescription.length} / 5000 (mínimo {minChars} caracteres)
+            </p>
+            <div className="mt-4 flex items-center">
+              <input type="checkbox" id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="sr-only"/>
+              <label htmlFor="terms" className="custom-checkbox-glass-container">
+                <span className={`custom-checkbox-glass ${termsAccepted ? 'custom-checkbox-glass-checked' : ''}`}><IoCheckmark className={`custom-checkbox-glass-checkmark ${termsAccepted ? 'custom-checkbox-glass-checkmark-checked' : ''}`} /></span>
+                <span className="ml-3 block text-sm text-[var(--text-muted)]">Acepto los <a href="#/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">términos</a> y <a href="#/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">política de privacidad</a>.</span>
+              </label>
+            </div>
+          </div>
+        );
+      case 2:
+        const plans = [
+            { id: 'free', name: 'Consulta Inicial Gratuita', price: '0€', duration: 'Por Email', desc: 'Evaluación inicial de tu proyecto. Recibirás una respuesta detallada por email.'},
+            { id: '30min', name: 'Sesión Estratégica', price: '150€', duration: '30 min', desc: 'Análisis profundo de un problema específico y plan de acción.' },
+            { id: '60min', name: 'Consultoría Completa', price: '250€', duration: '1 hora', desc: 'Para retos complejos, arquitectura, o roadmaps estratégicos.' },
+        ];
+        return (
+            <div>
+                <h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 2: Elige tu Plan</h2>
+                <p className="text-center text-[var(--text-muted)] mb-6">Selecciona la opción que mejor se adapte a tu necesidad.</p>
+                <div className="space-y-4">{plans.map(plan => (<div key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={`plan-card-glass ${selectedPlan === plan.id ? 'plan-card-glass-selected' : ''}`}><div className="flex justify-between items-center"><h3 className="font-bold text-lg text-[var(--text-color)]">{plan.name}</h3><p className="font-bold text-lg text-[var(--primary-color)]">{plan.price}</p></div><p className="text-sm text-[var(--text-muted)]">{plan.desc}</p><p className="text-sm font-semibold text-gray-500 mt-1">{plan.duration}</p></div>))}</div>
+            </div>
+        );
+      case 3: // The missing "Agenda" step
+        const Calendar = () => {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+            const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+            const year = currentMonth.getFullYear(); const month = currentMonth.getMonth();
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysOfWeek = ['L', 'M', 'X', 'J', 'V', 'S', 'D']; const startDayIndex = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+            const days = Array.from({length: startDayIndex}, (_, i) => <div key={`empty-${i}`} className="w-10 h-10"></div>);
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const isPast = date < today; const isWeekend = date.getDay() === 0 || date.getDay() === 6; const isDisabled = isPast || isWeekend;
+                const isSelected = selectedDate && date.getTime() === selectedDate.getTime(); const isToday = date.getTime() === today.getTime();
+                days.push(<button key={day} disabled={isDisabled} onClick={() => setSelectedDate(date)} className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${isSelected ? 'bg-[var(--primary-color)] text-white shadow-lg' : ''} ${!isSelected && isToday ? 'border-2 border-[var(--primary-color)]' : ''} ${!isSelected && !isDisabled ? 'hover:bg-[var(--nav-inactive-hover-bg)]' : ''} ${isDisabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-[var(--text-color)]'}`}>{day}</button>);
+            }
+            return (<div className="plan-card-glass p-4"><div className="flex items-center justify-between mb-4"><button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-[var(--nav-inactive-hover-bg)]"><IoChevronBack /></button><h3 className="font-bold text-lg text-center text-[var(--text-color)] capitalize">{new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonth)}</h3><button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-[var(--nav-inactive-hover-bg)]"><IoChevronForward /></button></div><div className="grid grid-cols-7 gap-1 text-center text-xs text-[var(--text-muted)] mb-2 font-bold">{daysOfWeek.map(day => <div key={day}>{day}</div>)}</div><div className="grid grid-cols-7 gap-y-1 place-items-center">{days}</div></div>);
+        };
+        const TimeSlots = () => {
+             if (!selectedDate) return (<div><h3 className="font-bold text-lg mb-2 text-center text-[var(--text-color)]">Horarios Disponibles</h3><div className="plan-card-glass aspect-[4/3] flex items-center justify-center"><p className="text-[var(--text-muted)] text-center p-4">Selecciona una fecha para ver los horarios.</p></div></div>);
+            const interval = selectedPlan === '60min' ? 60 : 30; const slots = []; const now = new Date(); const isToday = selectedDate.toDateString() === now.toDateString();
+            for (let hour = 9; hour < 16; hour++) {
+                for (let minute = 0; minute < 60; minute += interval) {
+                    const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    const slotTime = new Date(selectedDate); slotTime.setHours(hour, minute, 0, 0); const isDisabled = isToday && slotTime < now;
+                    if (hour * 60 + minute < 16 * 60) slots.push(<button key={time} disabled={isDisabled} onClick={() => setSelectedTime(time)} className={`p-2 rounded-lg font-semibold text-sm transition-colors duration-200 w-full ${selectedTime === time ? 'bg-[var(--primary-color)] text-white shadow-md' : ''} ${!isDisabled && selectedTime !== time ? 'bg-[var(--input-bg)] hover:bg-[var(--nav-inactive-hover-bg)]' : ''} ${isDisabled ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed' : ''}`}>{time}</button>);
+                }
+            }
+            return (<div><h3 className="font-bold text-lg mb-2 text-center text-[var(--text-color)] capitalize">{new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate)}</h3><div className="plan-card-glass p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">{slots}</div></div>);
+        };
+        return (<div><h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 3: Agenda tu Sesión</h2><p className="text-center text-[var(--text-muted)] mb-6">Selecciona una fecha y hora disponibles (L-V, 9:00 - 16:00).</p><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><Calendar /><TimeSlots /></div></div>);
+      case 4: // Confirmation Step
+        return (
+          <div>
+            <h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 4: Confirma tu Solicitud</h2>
+            <p className="text-center text-[var(--text-muted)] mb-6">Introduce tus datos de contacto para finalizar.</p>
+            <div className="space-y-4">
+                <div className="relative"><IoPersonOutline className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--text-muted)]" /><input type="text" placeholder="Nombre completo" name="fullName" className="glass-input" value={contactInfo.name} onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})} required /></div>
+                <div className="relative"><IoMailOutline className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--text-muted)]" /><input type="email" placeholder="Email" name="email" className="glass-input" value={contactInfo.email} onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})} required /></div>
+            </div>
+             {error && <p className="text-red-500 text-sm text-center mt-4">{error}</p>}
+          </div>
+        );
+      case 5: // Success Step
+        return (<div className="text-center py-8"><IoCheckmarkCircleOutline className="w-20 h-20 text-green-500 mx-auto mb-4" /><h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">¡Solicitud Enviada!</h2><p className="text-center text-[var(--text-muted)] mb-6 max-w-md mx-auto">Gracias, {contactInfo.name}. He recibido tu solicitud y te responderé en un plazo de 24-48 horas.</p></div>);
+      default: return null;
+    }
+  };
+  
+  const getButtonState = () => {
+      if (isLoading) return true;
+      switch(step) {
+          case 1: return !termsAccepted || problemDescription.length < minChars;
+          case 2: return !selectedPlan;
+          case 3: return !selectedDate || !selectedTime;
+          case 4: return contactInfo.name.trim() === '' || !/^\S+@\S+\.\S+$/.test(contactInfo.email);
+          default: return false;
+      }
+  }
+
+  const getButtonText = () => {
+      if (isLoading) return "Enviando...";
+      if (step === 4) return "Confirmar y Enviar Solicitud";
+      return "Continuar";
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative text-white border border-slate-700">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
-          <IoClose size={28} />
-        </button>
-
-        {step === STEPS.DETAILS && (
-          <form onSubmit={handleEmailSubmit}>
-            <h2 className="text-2xl font-bold mb-1 text-white">Comencemos</h2>
-            <p className="text-slate-400 mb-6">Introduce tu email para continuar.</p>
-            {error && <p className="text-red-500 mb-4 text-sm font-medium">{error}</p>}
-            <div className="relative mb-4">
-              <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" required className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 pl-10 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 transition-colors" disabled={isLoading || !email}>
-              {isLoading ? 'Comprobando...' : 'Continuar'}
-            </button>
-            <div className="relative my-4 text-center"><span className="absolute top-1/2 left-0 w-full h-px bg-slate-700"></span><span className="relative bg-slate-900 px-2 text-sm text-slate-400">o</span></div>
-            <button type="button" onClick={handleGoogleSignIn} className="w-full flex items-center justify-center bg-white text-black py-3 rounded-lg hover:bg-gray-200 font-bold disabled:opacity-50 transition-colors" disabled={isLoading}>
-              <IoLogoGoogle className="mr-3" /> Continuar con Google
-            </button>
-          </form>
-        )}
-
-        {step === STEPS.LOGIN && (
-          <form onSubmit={handleLogin}>
-            <h2 className="text-2xl font-bold mb-1 text-white">¡Hola de nuevo!</h2>
-            <p className="text-slate-400 mb-6">El email <strong className="text-white">{email}</strong> ya está registrado.</p>
-            {error && <p className="text-red-500 mb-4 text-sm font-medium">{error}</p>}
-            <div className="relative mb-4">
-              <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Contraseña" required className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 pl-10 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 transition-colors" disabled={isLoading}>
-              {isLoading ? 'Accediendo...' : 'Iniciar Sesión'}
-            </button>
-            <button type="button" onClick={() => setStep(STEPS.DETAILS)} className="mt-3 text-sm text-slate-400 hover:underline w-full">Usar otro email</button>
-          </form>
-        )}
-        
-        {step === STEPS.REGISTER && (
-           <form onSubmit={handleRegistration}>
-                <h2 className="text-2xl font-bold mb-1 text-white">Crea tu cuenta</h2>
-                <p className="text-slate-400 mb-6">Estás a un paso. Completa tus datos.</p>
-                {error && <p className="text-red-500 mb-4 text-sm font-medium">{error}</p>}
-                <div className="relative mb-4">
-                    <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" required className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 pl-10 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
-                </div>
-                <div className="relative mb-4">
-                    <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Crea una contraseña (mín. 6 caracteres)" required className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 pl-10 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 transition-colors" disabled={isLoading}>
-                    {isLoading ? 'Creando cuenta...' : 'Crear Cuenta y Continuar'}
-                </button>
-                 <button type="button" onClick={() => setStep(STEPS.DETAILS)} className="mt-3 text-sm text-slate-400 hover:underline w-full">Volver</button>
-            </form>
-        )}
-
-        {step === STEPS.SERVICES && (
-          <div>
-            <h2 className="text-2xl font-bold mb-1 text-white">Elige los Servicios</h2>
-            <p className="text-slate-400 mb-6">Selecciona uno o más servicios de tu interés.</p>
-            {bookingPlaceholders && bookingPlaceholders.services ? (
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {bookingPlaceholders.services.map(service => (
-                  <button key={service} onClick={() => toggleService(service)} className={`p-4 rounded-lg border-2 text-center font-semibold transition-all duration-200 ${selectedServices.includes(service) ? 'bg-blue-600 text-white border-blue-500 scale-105' : 'bg-slate-800 border-slate-700 hover:border-blue-500'}`}>
-                    {service}
-                  </button>
-                ))}
-              </div>
-            ) : <p className="text-red-500">Error: No se pudieron cargar los servicios.</p>}
-            <button onClick={handleNextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50" disabled={selectedServices.length === 0}>
-              Siguiente
-            </button>
-          </div>
-        )}
-
-        {step === STEPS.CONFIRMATION && (
-          <div>
-            <h2 className="text-2xl font-bold mb-1 text-white">Confirma tu Consulta</h2>
-            <p className="text-slate-400 mb-6">Revisa los detalles y agenda tu sesión.</p>
-            <div className="bg-slate-800 p-4 rounded-lg mb-6">
-              <h3 className="font-bold text-lg mb-2 text-white">Servicios Seleccionados:</h3>
-              <ul className="list-disc list-inside text-slate-300">
-                {selectedServices.map(s => <li key={s}>{s}</li>)}
-              </ul>
-            </div>
-            <div className="flex justify-between items-center gap-4">
-              <button onClick={handlePrevStep} className="w-full bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 font-semibold transition-colors">
-                Anterior
-              </button>
-              <button onClick={handleConfirmBooking} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-bold transition-colors" disabled={isLoading}>
-                {isLoading ? 'Agendando...' : 'Confirmar y Agendar'}
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {step === STEPS.SUCCESS && (
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-green-400 mb-2">¡Consulta Agendada!</h2>
-            <p className="text-slate-300 mb-6">Gracias. He recibido tu solicitud y me pondré en contacto contigo muy pronto para coordinar los próximos pasos.</p>
-            <button onClick={onClose} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold">
-              Cerrar
-            </button>
-          </div>
-        )}
-
+    <div onClick={handleBackdropClick} className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`modal-glass-content w-full max-w-3xl p-8 relative transform transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <button onClick={onClose} aria-label="Cerrar modal" className="absolute top-6 right-6 w-8 h-8 rounded-full flex items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--nav-inactive-hover-bg)] transition-all duration-300 z-20"><IoClose className="text-lg" /></button>
+        { step <= 4 && <ProgressBar step={step} />}
+        <div className="px-4 min-h-[350px] flex items-center justify-center">{renderStepContent()}</div>
+        { step < 5 && (<div className="flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)]"><div>{step > 1 && <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>}</div><button onClick={step === 4 ? handleSubmit : handleNext} disabled={getButtonState()} className="btn-cta text-base py-3 px-6">{getButtonText()}</button></div>)}
+        { step === 5 && (<div className="flex justify-center mt-8 pt-6 border-t border-[var(--border-color)]"><button onClick={onClose} className="btn-cta text-base py-3 px-6">Entendido</button></div>)}
       </div>
     </div>
   );

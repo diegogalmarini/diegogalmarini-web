@@ -11,7 +11,8 @@ import {
   signOut,
   sendEmailVerification,
   updateProfile,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  sendPasswordResetEmail // Importar la función para resetear contraseña
 } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
@@ -19,12 +20,13 @@ import { auth } from '../firebaseConfig';
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
-  checkIfEmailExists: (email: string) => Promise<boolean>; // Nueva función
+  checkIfEmailExists: (email: string) => Promise<boolean>;
   registerWithEmail: (name:string, email: string, password: string) => Promise<FirebaseUser>;
   loginWithEmail: (email: string, password: string) => Promise<FirebaseUser>;
   signInWithGoogle: () => Promise<FirebaseUser>;
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>; // Nueva función
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,14 +43,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  // Nueva función para comprobar si un email ya está registrado.
   const checkIfEmailExists = async (email: string): Promise<boolean> => {
     try {
       const methods = await fetchSignInMethodsForEmail(auth, email);
       return methods.length > 0;
     } catch (error) {
-      // Errores como 'invalid-email' se pueden ignorar aquí.
-      // Devolvemos `false` para no bloquear al usuario por un email mal formado aún.
       return false;
     }
   };
@@ -97,15 +96,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Nueva función para enviar el correo de reseteo de contraseña.
+  const sendPasswordReset = async (email: string): Promise<void> => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const value = {
     user,
     loading,
-    checkIfEmailExists, // Exponemos la nueva función
+    checkIfEmailExists,
     registerWithEmail,
     loginWithEmail,
     signInWithGoogle,
     logout,
     sendVerificationEmail,
+    sendPasswordReset, // Exponemos la nueva función
   };
 
   return (

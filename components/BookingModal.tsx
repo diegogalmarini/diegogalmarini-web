@@ -21,7 +21,7 @@ interface BookingModalProps {
   onClose: () => void;
 }
 
-// --- Re-implementing the Original, Correct ProgressBar ---
+// --- ProgressBar Component ---
 const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
     const steps = [
         { num: 1, icon: <IoPersonOutline />, label: 'Problema' },
@@ -31,7 +31,7 @@ const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
     ];
 
     return (
-        <div className="flex justify-between items-center mb-12 mt-12 px-4 md:px-8">
+        <div className="flex justify-between items-center mb-8 mt-4 px-4 md:px-8">
             {steps.map((s, index) => (
                 <React.Fragment key={s.num}>
                     <div className="flex flex-col items-center z-10">
@@ -117,20 +117,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
   
   useEffect(() => {
-    setSelectedTime(null); // Reset time when date changes
+    setSelectedTime(null);
   }, [selectedDate]);
 
   // --- Navigation & Submission ---
   const handleNext = () => {
     if (step === 2 && selectedPlan === 'free') {
-      setStep(4); // Skip calendar for free plan
+      setStep(4);
     } else {
       setStep(s => s + 1);
     }
   };
   const handleBack = () => {
      if (step === 4 && selectedPlan === 'free') {
-      setStep(2); // Go back to plan selection from confirm if plan was free
+      setStep(2);
     } else {
       setStep(s => s - 1);
     }
@@ -151,7 +151,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         status: 'Pendiente',
         createdAt: serverTimestamp(),
       });
-      setStep(5); // Success step
+      setStep(5);
     } catch (err) {
       setError("No se pudo enviar la consulta. Inténtalo de nuevo.");
     } finally {
@@ -175,7 +175,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
               <input type="checkbox" id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="sr-only"/>
               <label htmlFor="terms" className="custom-checkbox-glass-container">
                 <span className={`custom-checkbox-glass ${termsAccepted ? 'custom-checkbox-glass-checked' : ''}`}><IoCheckmark className={`custom-checkbox-glass-checkmark ${termsAccepted ? 'custom-checkbox-glass-checkmark-checked' : ''}`} /></span>
-                <span className="ml-3 block text-sm text-[var(--text-muted)]">Acepto los <a href="#/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">términos</a> y <a href="#/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">política de privacidad</a>.</span>
+                <span className="ml-3 block text-sm text-[var(--text-muted)]">Acepto los <a href="#/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">términos</a> y la <a href="#/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-[var(--text-color)] hover:text-[var(--primary-color)]">política de privacidad</a>.</span>
               </label>
             </div>
           </div>
@@ -193,7 +193,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-4">{plans.map(plan => (<div key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={`plan-card-glass ${selectedPlan === plan.id ? 'plan-card-glass-selected' : ''}`}><div className="flex justify-between items-center"><h3 className="font-bold text-lg text-[var(--text-color)]">{plan.name}</h3><p className="font-bold text-lg text-[var(--primary-color)]">{plan.price}</p></div><p className="text-sm text-[var(--text-muted)]">{plan.desc}</p><p className="text-sm font-semibold text-gray-500 mt-1">{plan.duration}</p></div>))}</div>
             </div>
         );
-      case 3: // The missing "Agenda" step
+      case 3:
         const Calendar = () => {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -223,7 +223,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             return (<div><h3 className="font-bold text-lg mb-2 text-center text-[var(--text-color)] capitalize">{new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate)}</h3><div className="plan-card-glass p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">{slots}</div></div>);
         };
         return (<div><h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 3: Agenda tu Sesión</h2><p className="text-center text-[var(--text-muted)] mb-6">Selecciona una fecha y hora disponibles (L-V, 9:00 - 16:00).</p><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><Calendar /><TimeSlots /></div></div>);
-      case 4: // Confirmation Step
+      case 4:
         return (
           <div>
             <h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Paso 4: Confirma tu Solicitud</h2>
@@ -235,7 +235,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
              {error && <p className="text-red-500 text-sm text-center mt-4">{error}</p>}
           </div>
         );
-      case 5: // Success Step
+      case 5:
         return (<div className="text-center py-8"><IoCheckmarkCircleOutline className="w-20 h-20 text-green-500 mx-auto mb-4" /><h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">¡Solicitud Enviada!</h2><p className="text-center text-[var(--text-muted)] mb-6 max-w-md mx-auto">Gracias, {contactInfo.name}. He recibido tu solicitud y te responderé en un plazo de 24-48 horas.</p></div>);
       default: return null;
     }
@@ -260,12 +260,31 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div onClick={handleBackdropClick} className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      <div className={`modal-glass-content w-full max-w-3xl p-8 relative transform transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+      <div className={`modal-glass-content w-full max-w-3xl lg:max-w-4xl p-6 md:p-8 relative transform transition-all duration-300 flex flex-col ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <button onClick={onClose} aria-label="Cerrar modal" className="absolute top-6 right-6 w-8 h-8 rounded-full flex items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--nav-inactive-hover-bg)] transition-all duration-300 z-20"><IoClose className="text-lg" /></button>
-        { step <= 4 && <ProgressBar step={step} />}
-        <div className="px-4 min-h-[350px] flex items-center justify-center">{renderStepContent()}</div>
-        { step < 5 && (<div className="flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)]"><div>{step > 1 && <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>}</div><button onClick={step === 4 ? handleSubmit : handleNext} disabled={getButtonState()} className="btn-cta text-base py-3 px-6">{getButtonText()}</button></div>)}
-        { step === 5 && (<div className="flex justify-center mt-8 pt-6 border-t border-[var(--border-color)]"><button onClick={onClose} className="btn-cta text-base py-3 px-6">Entendido</button></div>)}
+        
+        {/* Header: Progress Bar (fixed at the top) */}
+        <div className="shrink-0">
+          { step <= 4 && <ProgressBar step={step} />}
+        </div>
+        
+        {/* Content: This is the scrollable area */}
+        <div className="px-4 flex-grow overflow-y-auto min-h-[350px]">
+          {renderStepContent()}
+        </div>
+        
+        {/* Footer: Buttons (fixed at the bottom) */}
+        { step < 5 && (
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)] shrink-0">
+                <div>{step > 1 && <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>}</div>
+                <button onClick={step === 4 ? handleSubmit : handleNext} disabled={getButtonState()} className="btn-cta text-base py-3 px-6">{getButtonText()}</button>
+            </div>
+        )}
+        { step === 5 && (
+             <div className="flex justify-center mt-8 pt-6 border-t border-[var(--border-color)] shrink-0">
+                 <button onClick={onClose} className="btn-cta text-base py-3 px-6">Entendido</button>
+            </div>
+        )}
       </div>
     </div>
   );

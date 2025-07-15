@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { homeServices, caseStudies, testimonials, faqs, heroHeadlines, heroPills, differentiators, detailedServices, finalCtaHeadlines, servicesHeadlines } from '../constants';
+import { homeServices, caseStudies, testimonials, faqs, heroHeadlines, heroPills, differentiators, detailedServices, finalCtaHeadlines } from '../constants';
 import { Card, FaqItem } from '../components/common';
-import { CaseStudy, Pill, Differentiator, FaqItem as FaqItemType, ServicesHeadline } from '../types';
+import { CaseStudy, Pill, Differentiator, FaqItem as FaqItemType } from '../types';
 import { TestimonialSlider } from '../components/TestimonialSlider';
 import { IoCheckmarkCircle } from 'react-icons/io5';
 
@@ -29,7 +29,6 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
     const [activeService, setActiveService] = useState<'strategy' | 'development' | 'growth'>('strategy');
     const [finalCta] = useState(() => finalCtaHeadlines[Math.floor(Math.random() * finalCtaHeadlines.length)]);
     const [randomFaqs] = useState<FaqItemType[]>(() => [...faqs].sort(() => 0.5 - Math.random()).slice(0, 7));
-    const [servicesHeadline] = useState<ServicesHeadline>(() => servicesHeadlines[Math.floor(Math.random() * servicesHeadlines.length)]);
 
     const activeServiceData = homeServices.find(s => s.id === activeService);
     const activeServiceDetails = activeServiceData ? detailedServices[activeServiceData.id] : null;
@@ -40,18 +39,18 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             <section className="relative overflow-hidden pt-32 pb-40 text-center">
                 <div className="absolute inset-0 gradient-bg"></div>
                 <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-                    <h1 className="text-5xl md:text-6xl font-black text-[var(--text-color)] tracking-tight">
+                    <h1 className="text-5xl md:text-7xl font-black text-[var(--text-color)] tracking-tight">
                         {headline}
                     </h1>
-                    <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-[var(--text-muted)] leading-relaxed">
+                    <p className="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-[var(--text-muted)] leading-relaxed">
                         Ayudo a empresas y startups a diseñar, construir y escalar productos de alto impacto con IA, Blockchain y estrategias de crecimiento digital probadas.
                     </p>
-                    <div className="mt-12">
-                         <button onClick={onBookCallClick} className="btn-cta text-lg !px-8 !py-4">
+                    <div className="mt-10">
+                         <button onClick={onBookCallClick} className="btn-cta text-lg px-10 py-5">
                             Agendar Llamada Estratégica
                         </button>
                     </div>
-                    <div className="mt-16 flex justify-center items-center flex-wrap gap-4 text-sm">
+                    <div className="mt-12 flex justify-center items-center flex-wrap gap-4 text-sm">
                         {pills.map((pill) => (
                            <div key={pill.text} className="tech-pill-glass">
                                <pill.icon />
@@ -63,11 +62,11 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             </section>
 
             {/* Differentiator Section */}
-            <section className="py-32 md:py-40">
+            <section className="py-28">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <div className="differentiator-card-glass">
                         <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-color)]">{differentiator.title}</h2>
-                        <p className="mt-8 text-lg text-[var(--text-muted)] leading-relaxed">
+                        <p className="mt-6 text-lg text-[var(--text-muted)] leading-relaxed">
                             "{differentiator.description}"
                         </p>
                     </div>
@@ -75,11 +74,11 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             </section>
 
             {/* Services Section */}
-            <section className="py-32 md:py-40">
+            <section className="py-28">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-6">{servicesHeadline.title}</h2>
-                    <p className="text-lg text-[var(--text-muted)] text-center max-w-3xl mx-auto mb-20">
-                        {servicesHeadline.description}
+                    <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-4">Soluciones de Ciclo Completo</h2>
+                    <p className="text-lg text-[var(--text-muted)] text-center max-w-3xl mx-auto mb-16">
+                        Mi enfoque integral cubre todo el ciclo de vida del producto, garantizando que cada fase esté alineada con una visión estratégica unificada para maximizar el éxito y la rentabilidad.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
@@ -131,9 +130,9 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             </section>
 
             {/* Case Studies Section */}
-            <section className="py-32 md:py-40">
+            <section className="py-28">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-20">Innovación Probada en Proyectos Reales</h2>
+                    <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-16">Innovación Probada en Proyectos Reales</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
                         {caseStudies.map((cs) => (
                            <CaseStudyCard key={cs.id} caseStudy={cs} />
@@ -143,18 +142,18 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             </section>
 
             {/* Testimonials Section */}
-            <section className="py-32 md:py-40">
+            <section className="py-28">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                     <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-20">Lo que dicen mis clientes</h2>
+                     <h2 className="text-4xl md:text-5xl font-bold text-center text-[var(--text-color)] mb-16">Lo que dicen mis clientes</h2>
                     <TestimonialSlider testimonials={testimonials} />
                 </div>
             </section>
 
             {/* FAQ Section */}
-            <section id="faq" className="py-32 md:py-40">
+            <section id="faq" className="py-28">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Card>
-                        <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-color)] mb-12 text-center">Preguntas Frecuentes</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-color)] mb-8 text-center">Preguntas Frecuentes</h2>
                         <div>
                             {randomFaqs.map((faq, index) => (
                                 <FaqItem key={index} question={faq.question} answer={faq.answer} />
@@ -165,11 +164,11 @@ const HomePage: React.FC<{onBookCallClick: () => void}> = ({ onBookCallClick }) 
             </section>
 
              {/* Final CTA Section */}
-            <section className="py-32 md:py-40">
+            <section className="py-28">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-color)]">{finalCta}</h2>
-                    <div className="mt-12">
-                        <button onClick={onBookCallClick} className="btn-cta text-lg !px-8 !py-4">
+                    <div className="mt-10">
+                        <button onClick={onBookCallClick} className="btn-cta text-lg px-10 py-5">
                             Agendar mi Sesión Estratégica
                         </button>
                     </div>

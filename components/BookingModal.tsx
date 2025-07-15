@@ -31,7 +31,7 @@ const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
     ];
 
     return (
-        <div className="flex justify-between items-center mb-8 mt-4 px-4 md:px-8">
+        <div className="flex justify-between items-center mb-8 mt-4 px-4 md:px-8 shrink-0">
             {steps.map((s, index) => (
                 <React.Fragment key={s.num}>
                     <div className="flex flex-col items-center z-10">
@@ -269,7 +269,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         </div>
         
         {/* Content: This is the scrollable area */}
-        <div className="px-4 flex-grow overflow-y-auto min-h-[350px]">
+        <div className="px-4 flex-grow overflow-y-auto min-h-[400px]">
           {renderStepContent()}
         </div>
         

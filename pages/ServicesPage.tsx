@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { detailedServices } from '../constants';
-import { Card } from '../components/common';
+import { detailedServices } from '../constants.tsx';
+import { Card } from '../components/common.tsx';
 import { IoCheckmarkCircle } from 'react-icons/io5';
 
 const ServiceDetailCard: React.FC<{ service: typeof detailedServices[string] }> = ({ service }) => (

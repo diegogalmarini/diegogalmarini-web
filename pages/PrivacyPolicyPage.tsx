@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { Card } from '../components/common';
+import { Card } from '../components/common.tsx';
 
 const PrivacyPolicyPage: React.FC = () => {
   return (

@@ -55,3 +55,48 @@ export const FaqItem: React.FC<FaqItemProps> = ({ question, answer }) => {
     </div>
   );
 };
+
+interface BarChartProps {
+  data: { name: string; value: number }[];
+}
+
+export const BarChart: React.FC<BarChartProps> = ({ data }) => {
+  const maxValue = Math.max(...data.map(d => d.value));
+  const chartHeight = 150;
+  const barWidth = 40;
+  const barMargin = 20;
+  const chartWidth = data.length * (barWidth + barMargin);
+
+  return (
+    <svg viewBox={`0 0 ${chartWidth} ${chartHeight + 30}`} aria-label="Gráfico de resultados">
+      {data.map((d, i) => {
+        const barHeight = (d.value / maxValue) * chartHeight;
+        const x = i * (barWidth + barMargin);
+        const y = chartHeight - barHeight;
+        const strokeDasharray = `${barHeight}, ${barHeight}`;
+        const strokeDashoffset = barHeight;
+
+        return (
+          <g key={d.name}>
+            <text x={x + barWidth / 2} y={chartHeight + 20} textAnchor="middle" fontSize="12" fill="var(--text-muted)">
+              {d.name}
+            </text>
+            <text x={x + barWidth / 2} y={y - 8} textAnchor="middle" fontSize="12" fontWeight="bold" fill="var(--text-color)">
+              {d.value}
+            </text>
+            <line
+              className="bar-chart-bar"
+              x1={x + barWidth / 2}
+              y1={chartHeight}
+              x2={x + barWidth / 2}
+              y2={y}
+              stroke="var(--primary-color)"
+              strokeWidth={barWidth}
+              style={{ strokeDasharray, strokeDashoffset }}
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+};

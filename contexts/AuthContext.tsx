@@ -1,7 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { 
-  Auth, 
   User as FirebaseUser,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -12,11 +11,10 @@ import {
   sendEmailVerification,
   updateProfile,
   fetchSignInMethodsForEmail,
-  sendPasswordResetEmail // Importar la función para resetear contraseña
+  sendPasswordResetEmail
 } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { auth } from '../firebaseConfig.ts';
 
-// Interfaz para definir la forma del contexto de autenticación.
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
@@ -26,7 +24,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<FirebaseUser>;
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<void>; // Nueva función
+  sendPasswordReset: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const methods = await fetchSignInMethodsForEmail(auth, email);
       return methods.length > 0;
     } catch (error) {
+      console.error("Error checking email existence:", error);
       return false;
     }
   };
@@ -96,7 +95,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Nueva función para enviar el correo de reseteo de contraseña.
   const sendPasswordReset = async (email: string): Promise<void> => {
     await sendPasswordResetEmail(auth, email);
   };
@@ -110,12 +108,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signInWithGoogle,
     logout,
     sendVerificationEmail,
-    sendPasswordReset, // Exponemos la nueva función
+    sendPasswordReset,
   };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[var(--bg-color)] z-[9999]">
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin {
+            animation: spin 1s linear infinite;
+          }
+        `}</style>
+        <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

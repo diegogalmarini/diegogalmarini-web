@@ -1,19 +1,11 @@
 
-import { initializeApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 
-/**
- * Configuración de Firebase para la aplicación.
- *
- * NOTA: Es crucial que el `authDomain` esté configurado con tu dominio personalizado
- * para evitar que los pop-ups de autenticación muestren la URL de Firebase.
- *
- * @see https://firebase.google.com/docs/auth/web/custom-auth-domain
- */
-const firebaseConfig = {
+// Configuración de Firebase proporcionada por el usuario.
+export const firebaseConfig = {
   apiKey: "AIzaSyBrJ_xfZeEVRXe0Fcw2XdDKVdCSRYHqaGA",
-  // Cambiado para usar el dominio personalizado en los flujos de autenticación.
-  authDomain: "diegogalmarini.com",
+  authDomain: "diego-galmarini-oficial-web.firebaseapp.com",
   projectId: "diego-galmarini-oficial-web",
   storageBucket: "diego-galmarini-oficial-web.appspot.com",
   messagingSenderId: "668819276616",
@@ -21,8 +13,16 @@ const firebaseConfig = {
   measurementId: "G-91HFCBNTBY"
 };
 
-// Se inicializa la app de Firebase.
-const app: FirebaseApp = initializeApp(firebaseConfig);
+let app: FirebaseApp;
 
-// Se exporta la instancia del servicio de autenticación para ser usada en la aplicación.
-export const auth: Auth = getAuth(app);
+// Evita la reinicialización de la app en entornos de desarrollo con HMR (Hot Module Replacement)
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
+const auth: Auth = getAuth(app);
+
+// Se exporta la app y el servicio de auth inicializados
+export { app, auth };

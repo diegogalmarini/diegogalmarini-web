@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card } from '../components/common';
+import { Card } from '../components/common.tsx';
 
 const TermsOfServicePage: React.FC = () => {
   return (

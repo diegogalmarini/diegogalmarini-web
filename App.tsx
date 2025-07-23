@@ -1,17 +1,17 @@
-
 import React from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import HomePage from './pages/HomePage';
-import ServicesPage from './pages/ServicesPage';
-import PortfolioPage from './pages/PortfolioPage';
-import AboutPage from './pages/AboutPage';
-import BookingModal from './components/BookingModal';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Layout } from './components/Layout.tsx';
+import HomePage from './pages/HomePage.tsx';
+import ServicesPage from './pages/ServicesPage.tsx';
+import PortfolioPage from './pages/PortfolioPage.tsx';
+import PortfolioDetailPage from './pages/PortfolioDetailPage.tsx';
+import AboutPage from './pages/AboutPage.tsx';
+import BookingModal from './components/BookingModal.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { LoginModal } from './components/LoginModal.tsx';
+import DashboardPage from './pages/DashboardPage.tsx';
+import TermsOfServicePage from './pages/TermsOfServicePage.tsx';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage.tsx';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -25,32 +25,41 @@ const ScrollToTop = () => {
 
 const AppContent: React.FC = () => {
   const [isBookingModalOpen, setBookingModalOpen] = React.useState(false);
-  const { user } = useAuth(); // Obtenemos el usuario aquí
+  const [isLoginModalOpen, setLoginModalOpen] = React.useState(false);
 
-  const handleOpenModal = () => setBookingModalOpen(true);
-  const handleCloseModal = () => setBookingModalOpen(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleOpenBookingModal = () => setBookingModalOpen(true);
+  const handleCloseBookingModal = () => setBookingModalOpen(false);
+
+  const handleOpenLoginModal = () => setLoginModalOpen(true);
+  const handleCloseLoginModal = () => setLoginModalOpen(false);
+
+  React.useEffect(() => {
+    if (location.hash === '#book') {
+      handleOpenBookingModal();
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   return (
     <>
       <ScrollToTop />
-      <Layout onBookCallClick={handleOpenModal}>
+      <Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}>
         <Routes>
-          <Route path="/" element={<HomePage onBookCallClick={handleOpenModal}/>} />
+          <Route path="/" element={<HomePage onBookCallClick={handleOpenBookingModal}/>} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/portfolio/:id" element={<PortfolioDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<DashboardPage onBookCallClick={handleOpenModal} />} />
+          <Route path="/dashboard" element={<DashboardPage onBookCallClick={handleOpenBookingModal} />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         </Routes>
       </Layout>
-      {/* Pasamos el usuario al modal para que sepa si empezar en registro o en servicios */}
-      <BookingModal 
-        isOpen={isBookingModalOpen} 
-        onClose={handleCloseModal}
-        user={user}
-      />
+      <BookingModal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal} />
+      <LoginModal isOpen={isLoginModalOpen} onClose={handleCloseLoginModal} />
     </>
   );
 };
@@ -58,11 +67,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <HashRouter>
+    <HashRouter>
+      <AuthProvider>
         <AppContent />
-      </HashRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </HashRouter>
   );
 };
 

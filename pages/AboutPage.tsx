@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { IoPersonCircleOutline, IoLogoLinkedin, IoLogoGithub, IoLogoTwitter, IoLogoInstagram } from 'react-icons/io5';
 
@@ -16,26 +17,19 @@ const socialLinks = [
 
 
 const AboutPage: React.FC = () => {
-  const [imgError, setImgError] = React.useState(false);
-
   return (
     <div className="py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-5 gap-16 items-start">
           <div className="lg:col-span-2 sticky top-28 space-y-8">
-            <div className="rounded-3xl shadow-2xl shadow-black/20 w-full aspect-square overflow-hidden bg-[var(--input-bg)]">
-                {imgError ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <IoPersonCircleOutline className="w-32 h-32 text-[var(--text-muted)]" />
-                    </div>
-                ) : (
-                    <img 
-                        src="/profile.jpg" 
-                        alt="Foto de perfil de Diego Galmarini"
-                        className="w-full h-full object-cover"
-                        onError={() => setImgError(true)}
-                    />
-                )}
+            <div className="group rounded-3xl shadow-2xl shadow-black/20 w-full aspect-square overflow-hidden bg-[var(--input-bg)]">
+                <img
+                    src="/profile.webp"
+                    alt="Foto de perfil de Diego Galmarini"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                />
             </div>
              <div className="bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-2xl shadow-[var(--shadow-color)] p-6 flex items-center space-x-4 transition-colors duration-300">
                 <IoPersonCircleOutline className="text-5xl text-[var(--primary-color)]" />
@@ -46,11 +40,11 @@ const AboutPage: React.FC = () => {
             </div>
             <div className="flex justify-around pt-2">
                 {socialLinks.map(link => (
-                    <a 
+                    <a
                         key={link.label}
-                        href={link.href} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         aria-label={`Perfil de Diego Galmarini en ${link.label}`}
                         className="social-link-glass"
                     >
@@ -66,7 +60,7 @@ const AboutPage: React.FC = () => {
             <h2 className="text-xl md:text-2xl font-semibold text-[var(--primary-color)] mb-12">
                 Socio Estratégico de Tecnología e Innovación
             </h2>
-            
+
             <div className="space-y-12 text-lg text-[var(--text-muted)] leading-relaxed">
               <section>
                 <h3 className="text-2xl font-bold text-[var(--text-color)] mb-4 border-b border-[var(--border-color)] pb-3 transition-colors duration-300">Quién soy</h3>

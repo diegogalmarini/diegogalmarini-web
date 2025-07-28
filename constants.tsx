@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { FC } from 'react';
-import { Service, CaseStudy, DetailedCaseStudy, Testimonial, FaqItem, DetailedService, Pill, Differentiator, TechStackItem } from './types.ts';
+import { Service, CaseStudy, DetailedCaseStudy, Testimonial, FaqItem, DetailedService, Pill, Differentiator } from './types';
 import { IoRocketOutline, IoCodeSlashOutline, IoMegaphoneOutline, IoLogoGoogle, IoSparklesOutline, IoCubeOutline, IoFlashOutline, IoCloudOutline, IoShieldCheckmarkOutline, IoSpeedometerOutline, IoAnalyticsOutline } from 'react-icons/io5';
 import { 
     SiPython, SiNextdotjs, SiReact, SiSolana, SiRust, SiAmazon, SiGoogleads, SiGoogleanalytics, SiDocker, SiVercel,

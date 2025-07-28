@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para la colección de clientes
+    match /clients/{clientId} {
+      allow read, write: if true; // Permitir acceso completo por ahora
+    }
+    
+    // Reglas para la colección de consultas
+    match /consultations/{consultationId} {
+      allow read, write: if true; // Permitir acceso completo por ahora
+    }
+    
+    // Reglas para la colección de citas
+    match /appointments/{appointmentId} {
+      allow read, write: if true; // Permitir acceso completo por ahora
+    }
+    
+    // Reglas para la colección de planes
+    match /plans/{planId} {
+      allow read, write: if true; // Permitir acceso completo por ahora
+    }
+    
+    // Regla por defecto - denegar acceso a otras colecciones
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

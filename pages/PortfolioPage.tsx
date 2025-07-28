@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { detailedCaseStudies } from '../constants.tsx';
+import { detailedCaseStudies } from '../constants';
 import { Card } from '../components/common.tsx';
-import { DetailedCaseStudy } from '../types.ts';
+import { DetailedCaseStudy } from '../types';
 
 const categoryColors: { [key: string]: string } = {
   'Proyecto Realizado': 'bg-green-500/10 text-green-600 dark:text-green-400',
@@ -43,7 +43,7 @@ const PortfolioPage: React.FC = () => {
     return detailedCaseStudies.filter(study => study.category === filter);
   }, [filter]);
 
-  const filters: ('all' | CaseStudy['category'])[] = ['all', 'Proyecto Realizado', 'Concepto Estratégico', 'Idea en Desarrollo'];
+  const filters: ('all' | DetailedCaseStudy['category'])[] = ['all', 'Proyecto Realizado', 'Concepto Estratégico', 'Idea en Desarrollo'];
 
   return (
     <div className="py-28">

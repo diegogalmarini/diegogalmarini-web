@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { homeServices, caseStudies, testimonials, faqs, heroHeadlines, heroPills, differentiators, detailedServices, finalCtaHeadlines, clientLogos } from '../constants';
+import { homeServices, caseStudies, testimonials, faqs, heroHeadlines, heroPills, differentiators, detailedServices, finalCtaHeadlines } from '../constants';
 import { Card, FaqItem } from '../components/common.tsx';
-import { CaseStudy, Pill, Differentiator, FaqItem as FaqItemType } from '../types.ts';
+import { CaseStudy, Pill, Differentiator, FaqItem as FaqItemType } from '../types';
 import { TestimonialSlider } from '../components/TestimonialSlider.tsx';
 import { ClientLogos } from '../components/ClientLogos.tsx';
 import { IoCheckmarkCircle } from 'react-icons/io5';

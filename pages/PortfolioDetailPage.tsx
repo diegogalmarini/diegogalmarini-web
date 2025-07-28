@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { detailedCaseStudies, techIcons } from '../constants.tsx';
+import { detailedCaseStudies } from '../constants';
 import { Card, BarChart } from '../components/common.tsx';
 import { IoArrowBack } from 'react-icons/io5';
 

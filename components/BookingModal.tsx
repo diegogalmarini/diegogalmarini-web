@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { bookingPlaceholders } from '../constants.tsx';
+import { bookingPlaceholders } from '../constants';
 import { 
   IoPersonOutline, 
   IoCalendarOutline, 
@@ -15,9 +15,12 @@ import {
   IoMailOpenOutline,
   IoCheckmarkDoneCircleOutline
 } from 'react-icons/io5';
-import { useAuth } from '../contexts/AuthContext.tsx';
-import { FirebaseConfigError } from './FirebaseConfigError.tsx';
-import { firebaseConfig } from '../firebaseConfig.ts';
+import { useAuth } from '../contexts/AuthContext';
+import { usePlans } from '../contexts/PlansContext';
+import { FirebaseConfigError } from './FirebaseConfigError';
+import { firebaseConfig } from '../firebaseConfig';
+import { consultationService, clientService } from '../services/firestore';
+import { Consultation, Client } from '../types/crm';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -26,35 +29,46 @@ interface BookingModalProps {
 
 const ProgressBar: React.FC<{ step: number; isLoggedIn: boolean }> = ({ step, isLoggedIn }) => {
     const anonSteps = [
-        { num: 1, icon: <IoPersonOutline />, label: 'Problema' },
-        { num: 2, icon: <IoCardOutline />, label: 'Plan' },
-        { num: 3, icon: <IoCalendarOutline />, label: 'Agenda' },
-        { num: 4, icon: <IoCheckmarkCircleOutline />, label: 'Registro' }
+        { num: 1, label: 'Problema' },
+        { num: 2, label: 'Plan' },
+        { num: 3, label: 'Agenda' },
+        { num: 4, label: 'Registro' }
     ];
     
     const loggedInSteps = [
-        { num: 1, icon: <IoPersonOutline />, label: 'Problema' },
-        { num: 2, icon: <IoCardOutline />, label: 'Plan' },
-        { num: 3, icon: <IoCalendarOutline />, label: 'Agenda' },
-        { num: 4, icon: <IoCheckmarkCircleOutline />, label: 'Confirmar' }
+        { num: 1, label: 'Problema' },
+        { num: 2, label: 'Plan' },
+        { num: 3, label: 'Agenda' },
+        { num: 4, label: 'Confirmar' }
     ];
 
     const steps = isLoggedIn ? loggedInSteps : anonSteps;
+    const progressPercentage = ((step - 1) / (steps.length - 1)) * 100;
 
     return (
-        <div className="flex justify-center items-start gap-8 sm:gap-10 mb-12 mt-12 w-full">
-            {steps.map((s) => (
-                <div key={s.num} className="flex flex-col items-center text-center">
-                    <div
-                        className={`progress-step-icon ${
-                            step >= s.num ? 'progress-step-icon-active' : ''
-                        }`}
-                    >
-                        {s.icon}
-                    </div>
-                    <p className={`text-xs mt-2 font-semibold ${step >= s.num ? 'text-[var(--primary-color)]' : 'text-[var(--text-muted)]'}`}>{s.label}</p>
+        <div className="mb-4 mt-4 w-full max-w-md mx-auto">
+            {/* Barra de progreso */}
+            <div className="relative mb-3">
+                <div className="w-full h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
+                    <div 
+                        className="h-full bg-[var(--primary-color)] rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${progressPercentage}%` }}
+                    ></div>
                 </div>
-            ))}
+            </div>
+            
+            {/* Etiquetas de pasos */}
+            <div className="flex justify-between items-center">
+                {steps.map((s) => (
+                    <div key={s.num} className="flex flex-col items-center text-center">
+                        <p className={`text-xs font-semibold transition-colors duration-300 ${
+                            step >= s.num ? 'text-[var(--primary-color)]' : 'text-[var(--text-muted)]'
+                        }`}>
+                            {s.label}
+                        </p>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
@@ -66,7 +80,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1);
   const [placeholder, setPlaceholder] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'free' | '30min' | '60min' | null>(null);
   const [problemDescription, setProblemDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -252,13 +266,68 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setStep((s) => Math.max(s - 1, 1));
   };
 
-  const handleConfirmAndSubmit = () => {
+  const handleConfirmAndSubmit = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-        setIsLoading(false);
-        setSubmissionType('confirm');
-        setStep(5);
-    }, 1000);
+    setError('');
+    
+    try {
+      // Verificar que el usuario esté autenticado
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Crear o actualizar cliente
+      let clientId = user.uid;
+      const clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'> = {
+        name: user.displayName || registrationData.name || 'Usuario',
+        email: user.email || '',
+        phone: '',
+        status: 'active',
+        source: 'website',
+        tags: ['web-lead'],
+        notes: '',
+        totalConsultations: 0,
+        totalRevenue: 0,
+        lastContactDate: new Date()
+      };
+
+      // Verificar si el cliente ya existe, si no, crearlo
+      try {
+        await clientService.getById(clientId);
+      } catch {
+        // Cliente no existe, crearlo
+        await clientService.create(clientId, clientData);
+      }
+
+      // Crear la consulta
+      const consultationData: Omit<Consultation, 'id' | 'createdAt' | 'updatedAt'> = {
+        clientId,
+        title: `Consulta - ${selectedPlan === 'free' ? 'Consulta Gratuita' : selectedPlan === '30min' ? 'Sesión Express' : 'Sesión Completa'}`,
+        description: problemDescription,
+        type: selectedPlan === 'free' ? 'consultation' : 'appointment',
+        status: selectedPlan === 'free' ? 'pending' : 'scheduled',
+        priority: 'medium',
+        source: 'website',
+        tags: [selectedPlan, 'web-booking'],
+        scheduledDate: selectedDate && selectedTime ? 
+          new Date(`${selectedDate.toISOString().split('T')[0]}T${selectedTime}:00`) : 
+          undefined,
+        estimatedDuration: selectedPlan === '60min' ? 60 : selectedPlan === '30min' ? 30 : undefined,
+        assignedTo: 'Diego Galmarini',
+        notes: `Plan seleccionado: ${selectedPlan}${selectedDate && selectedTime ? `\nFecha programada: ${selectedDate.toLocaleDateString()} ${selectedTime}` : ''}`,
+        followUpDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas después
+      };
+
+      await consultationService.create(consultationData);
+
+      setSubmissionType('confirm');
+      setStep(5);
+    } catch (err) {
+      console.error('Error al guardar la consulta:', err);
+      setError('Error al procesar tu solicitud. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleRegistrationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,18 +388,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           </div>
         );
     case 2:
-        const plans = [
-            { id: 'free', name: 'Consulta Inicial Gratuita', price: '0€', duration: 'Por Email', desc: 'Evaluación inicial de tu proyecto. Recibirás una respuesta detallada por email.'},
-            { id: '30min', name: 'Sesión Estratégica', price: '150€', duration: '30 min', desc: 'Análisis profundo de un problema específico y plan de acción.' },
-            { id: '60min', name: 'Consultoría Completa', price: '250€', duration: '1 hora', desc: 'Para retos complejos, arquitectura, o roadmaps estratégicos.' },
-        ];
+        // Obtener los planes del contexto
+        const { plans: contextPlans } = usePlans();
+        
+        // Mapear los planes del contexto al formato que espera el componente
+        const plans = contextPlans.map(plan => ({
+            id: plan.id === 'free' ? 'free' : plan.id === 'express' ? '30min' : '60min',
+            name: plan.name,
+            price: plan.price,
+            duration: plan.duration,
+            desc: plan.description
+        }));
         return (
             <div>
                 <h2 className="text-2xl font-bold text-center text-[var(--text-color)] mb-2">Elige tu Plan</h2>
                 <p className="text-center text-[var(--text-muted)] mb-6">Selecciona la opción que mejor se adapte a tu necesidad actual.</p>
                 <div className="space-y-4">
                     {plans.map(plan => (
-                        <div key={plan.id} onClick={() => setSelectedPlan(plan.id)}
+                        <div key={plan.id} onClick={() => setSelectedPlan(plan.id as 'free' | '30min' | '60min')}
                             className={`plan-card-glass ${selectedPlan === plan.id ? 'plan-card-glass-selected' : ''}`}>
                             <div className="flex justify-between items-center">
                                 <h3 className="font-bold text-lg text-[var(--text-color)]">{plan.name}</h3>
@@ -615,7 +690,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       onClick={handleBackdropClick}
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
     >
-      <div className={`modal-glass-content w-full max-w-3xl p-8 relative transform transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+      <div className={`modal-glass-content w-full max-w-3xl p-4 relative transform transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <button
           onClick={onClose}
           aria-label="Cerrar modal"
@@ -624,12 +699,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           <IoClose className="text-lg" />
         </button>
         { step <= 4 && <ProgressBar step={step} isLoggedIn={!!user} />}
-        <div className="px-4 min-h-[420px] flex items-center justify-center">
+        <div className="px-2 min-h-[300px] flex items-center justify-center">
             {renderStepContent()}
         </div>
 
         {step < 4 && (
-             <div className="flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)]">
+             <div className="flex justify-between items-center mt-4 pt-4 border-t border-[var(--border-color)]">
                 <div>
                     {step > 1 && <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>}
                 </div>
@@ -642,7 +717,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         )}
         
         {step === 4 && user && (
-            <div className="flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)]">
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-[var(--border-color)]">
                  <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>
                  <button onClick={handleConfirmAndSubmit} disabled={getButtonState()} className="btn-cta text-base py-3 px-6">
                      {isLoading ? 'Enviando...' : 'Confirmar y Enviar'}
@@ -651,14 +726,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         )}
         
         {step === 4 && !user && (
-             <div className="flex justify-center items-center mt-8 pt-6 border-t border-[var(--border-color)]">
+             <div className="flex justify-center items-center mt-4 pt-4 border-t border-[var(--border-color)]">
                  <button onClick={handleBack} className="btn-secondary-glass">Atrás</button>
             </div>
         )}
 
 
         {step === 5 && (
-             <div className="flex justify-end items-center mt-8 pt-6 border-t border-[var(--border-color)]">
+             <div className="flex justify-end items-center mt-4 pt-4 border-t border-[var(--border-color)]">
                 <button onClick={onClose} className="btn-cta text-base py-3 px-6">
                     Entendido
                 </button>

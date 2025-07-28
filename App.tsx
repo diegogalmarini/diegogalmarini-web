@@ -8,10 +8,12 @@ import PortfolioDetailPage from './pages/PortfolioDetailPage.tsx';
 import AboutPage from './pages/AboutPage.tsx';
 import BookingModal from './components/BookingModal.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { PlansProvider } from './contexts/PlansContext.tsx';
 import { LoginModal } from './components/LoginModal.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import TermsOfServicePage from './pages/TermsOfServicePage.tsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.tsx';
+import { FirestoreErrorProvider } from './contexts/FirestoreErrorContext';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -69,7 +71,11 @@ const App: React.FC = () => {
   return (
     <HashRouter>
       <AuthProvider>
-        <AppContent />
+        <PlansProvider>
+          <FirestoreErrorProvider>
+            <AppContent />
+          </FirestoreErrorProvider>
+        </PlansProvider>
       </AuthProvider>
     </HashRouter>
   );

@@ -48,8 +48,8 @@ const SORT_OPTIONS = [
   { value: 'name_desc', label: 'Nombre Z-A' },
   { value: 'email_asc', label: 'Email A-Z' },
   { value: 'email_desc', label: 'Email Z-A' },
-  { value: 'createdAt_desc', label: 'Más recientes' },
-  { value: 'createdAt_asc', label: 'Más antiguos' },
+  { value: 'registrationDate_desc', label: 'Más recientes' },
+  { value: 'registrationDate_asc', label: 'Más antiguos' },
   { value: 'lastContactDate_desc', label: 'Último contacto' }
 ];
 
@@ -60,6 +60,14 @@ export const ClientList: React.FC<ClientListProps> = ({
   onClientCreate,
   className = ''
 }) => {
+  console.log('🔧 ClientList props:', { onClientSelect, onClientEdit, onClientDelete, onClientCreate });
+  // Debug: verificar que las props lleguen correctamente
+  console.log('ClientList props:', {
+    onClientSelect: typeof onClientSelect,
+    onClientEdit: typeof onClientEdit,
+    onClientDelete: typeof onClientDelete,
+    onClientCreate: typeof onClientCreate
+  });
   // Estados locales
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -187,6 +195,37 @@ export const ClientList: React.FC<ClientListProps> = ({
     }
   }, [onClientCreate]);
 
+  // Función para limpiar datos corruptos
+  const handleCleanCorruptedData = useCallback(async () => {
+    const corruptedClients = clients.filter(client => 
+      !client || !client.id || !client.name || !client.email || 
+      client.name.trim() === '' || client.email.trim() === ''
+    );
+    
+    if (corruptedClients.length === 0) {
+      alert('No se encontraron datos corruptos para limpiar.');
+      return;
+    }
+    
+    const confirmDelete = window.confirm(
+      `Se encontraron ${corruptedClients.length} clientes con datos corruptos. ¿Deseas eliminarlos? Esta acción no se puede deshacer.`
+    );
+    
+    if (confirmDelete) {
+      try {
+        for (const client of corruptedClients) {
+          if (client && client.id) {
+            await deleteClient(client.id);
+          }
+        }
+        alert(`Se eliminaron ${corruptedClients.length} clientes con datos corruptos.`);
+      } catch (error) {
+        console.error('Error al limpiar datos corruptos:', error);
+        alert('Error al limpiar algunos datos corruptos. Revisa la consola para más detalles.');
+      }
+    }
+  }, [clients, deleteClient]);
+
   // Columnas de la tabla
   const columns = useMemo(() => [
     {
@@ -301,52 +340,80 @@ export const ClientList: React.FC<ClientListProps> = ({
       )
     },
     {
-      key: 'createdAt',
+      key: 'registrationDate',
       label: 'Registrado',
       sortable: true,
       render: (client: Client) => (
         <div className="text-sm text-gray-900">
-          {client?.createdAt ? format(parseISO(client.createdAt), 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
+          {client?.registrationDate ? format(parseISO(client.registrationDate), 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
         </div>
       )
     },
     {
       key: 'actions',
       label: 'Acciones',
-      render: (client: Client) => (
-        client ? (
+      render: (client: Client) => {
+        // Validar que el cliente existe y tiene ID
+        if (!client || !client.id) {
+          console.error('Invalid client data in actions column:', client);
+          return (
+            <div className="flex items-center space-x-2">
+              <span className="text-red-500 text-sm">Datos inválidos</span>
+            </div>
+          );
+        }
+        
+        return (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
-            onClick={() => handleView(client)}
-            title="Ver detalles"
-          >
-            <EyeIcon className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(client)}
-            title="Editar"
-            className="text-gray-600 hover:text-gray-700"
-          >
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteClick(client.id)}
-            title="Eliminar"
-            className="text-red-600 hover:text-red-700"
-          >
-            <TrashIcon className="h-4 w-4" />
+              onClick={(e) => {
+                console.log('🔥 View button clicked for client:', client);
+                console.log('🔥 handleView function:', handleView);
+                e.preventDefault();
+                e.stopPropagation();
+                handleView(client);
+              }}
+              title="Ver detalles"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                console.log('🔥 Edit button clicked for client:', client);
+                console.log('🔥 handleEdit function:', handleEdit);
+                e.preventDefault();
+                e.stopPropagation();
+                handleEdit(client);
+              }}
+              title="Editar"
+              className="text-gray-600 hover:text-gray-700"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                console.log('🔥 Delete button clicked for client:', client);
+                console.log('🔥 handleDeleteClick function:', handleDeleteClick);
+                e.preventDefault();
+                e.stopPropagation();
+                handleDeleteClick(client.id);
+              }}
+              title="Eliminar"
+              className="text-red-600 hover:text-red-700"
+            >
+              <TrashIcon className="h-4 w-4" />
             </Button>
           </div>
-        ) : null
-      )
+        );
+      }
     }
   ], [handleView, handleEdit, handleDeleteClick]);
 
@@ -453,15 +520,26 @@ export const ClientList: React.FC<ClientListProps> = ({
             Filtros
           </Button>
           
-          {/* Botón crear cliente */}
-          <Button
-            variant="primary"
-            onClick={handleCreate}
-            className="whitespace-nowrap"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Nuevo cliente
-          </Button>
+          {/* Botones de acción */}
+          <div className="flex space-x-2">
+            <Button
+              variant="primary"
+              onClick={handleCreate}
+              className="whitespace-nowrap"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Nuevo cliente
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handleCleanCorruptedData}
+              className="whitespace-nowrap text-red-600 border-red-300 hover:bg-red-50"
+              title="Eliminar clientes con datos corruptos"
+            >
+              🧹 Limpiar datos
+            </Button>
+          </div>
         </div>
 
         {/* Panel de filtros */}

@@ -399,24 +399,44 @@ export const clientService = {
       
       const clients: Client[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        return {
+        
+        // Validar y asegurar propiedades requeridas
+        const client: Client = {
           id: doc.id,
-          ...data,
+          name: data.name || 'Sin nombre',
+          email: data.email || 'Sin email',
+          phone: data.phone || '',
+          company: data.company || '',
+          status: data.status || 'active',
+          tags: data.tags || [],
+          notes: data.notes || '',
           registrationDate: convertTimestampToString(data.registrationDate),
-          lastContactDate: data.lastContactDate ? convertTimestampToString(data.lastContactDate) : undefined
-        } as Client;
-      });
+          lastContactDate: data.lastContactDate ? convertTimestampToString(data.lastContactDate) : undefined,
+          totalConsultations: data.totalConsultations || 0,
+          totalAppointments: data.totalAppointments || 0,
+          ...data // Mantener otras propiedades adicionales
+        };
+        
+        return client;
+      }).filter(client => client && client.id); // Filtrar clientes inválidos
       
       // Filtros adicionales en el cliente
       let filteredClients = clients;
       
       if (filters?.searchTerm) {
         const searchTerm = filters.searchTerm.toLowerCase();
-        filteredClients = clients.filter(client => 
-          client.name.toLowerCase().includes(searchTerm) ||
-          client.email.toLowerCase().includes(searchTerm) ||
-          (client.company && client.company.toLowerCase().includes(searchTerm))
-        );
+        filteredClients = clients.filter(client => {
+          // Validar que el cliente y sus propiedades existan
+          if (!client) return false;
+          
+          const name = client.name || '';
+          const email = client.email || '';
+          const company = client.company || '';
+          
+          return name.toLowerCase().includes(searchTerm) ||
+                 email.toLowerCase().includes(searchTerm) ||
+                 company.toLowerCase().includes(searchTerm);
+        });
       }
       
       if (filters?.tags && filters.tags.length > 0) {

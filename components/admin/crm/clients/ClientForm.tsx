@@ -241,18 +241,37 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         return;
       }
 
-      // Preparar datos
-      const formData = {
-        ...data,
-        tags: selectedTags,
-        phone: data.phone || undefined,
-        address: data.address || undefined,
-        company: data.company || undefined,
-        position: data.position || undefined,
-        timezone: data.timezone || undefined,
-        language: data.language || undefined,
-        notes: data.notes || undefined
+      // Preparar datos - filtrar campos vacíos para evitar undefined en Firestore
+      const formData: any = {
+        name: data.name,
+        email: data.email,
+        status: data.status,
+        preferredContactMethod: data.preferredContactMethod,
+        tags: selectedTags
       };
+
+      // Agregar campos opcionales solo si tienen valor
+      if (data.phone && data.phone.trim()) {
+        formData.phone = data.phone.trim();
+      }
+      if (data.address && data.address.trim()) {
+        formData.address = data.address.trim();
+      }
+      if (data.company && data.company.trim()) {
+        formData.company = data.company.trim();
+      }
+      if (data.position && data.position.trim()) {
+        formData.position = data.position.trim();
+      }
+      if (data.timezone && data.timezone.trim()) {
+        formData.timezone = data.timezone.trim();
+      }
+      if (data.language && data.language.trim()) {
+        formData.language = data.language.trim();
+      }
+      if (data.notes && data.notes.trim()) {
+        formData.notes = data.notes.trim();
+      }
 
       let result;
       if (client) {

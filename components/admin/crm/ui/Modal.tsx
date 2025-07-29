@@ -26,6 +26,8 @@ const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   className = ''
 }) => {
+  console.log('🎭 Modal component rendered with props:', { isOpen, title, size });
+  console.log('🎭 Modal children:', children ? 'Present' : 'Missing');
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -60,6 +62,8 @@ const Modal: React.FC<ModalProps> = ({
     }
   };
 
+  console.log('🎭 Modal about to return JSX, isOpen:', isOpen);
+  
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={handleOverlayClick}>

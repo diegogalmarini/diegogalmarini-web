@@ -19,6 +19,7 @@ import Button, { PrimaryButton } from './ui/Button';
 import LoadingSpinner from './ui/LoadingSpinner';
 import Alert from './ui/Alert';
 import Modal from './ui/Modal';
+import SimpleModal from './ui/SimpleModal';
 import Table from './ui/Table';
 import { formatDate, formatDateTime, isToday, isTomorrow } from '../../../utils/dateUtils';
 
@@ -66,8 +67,8 @@ type DashboardView =
   | 'availability';
 
 type ModalState = {
-  type: 'consultation' | 'client' | 'appointment' | null;
-  mode: 'create' | 'edit' | 'view' | null;
+  type: 'consultation' | 'client' | 'appointment' | 'confirmation' | null;
+  mode: 'create' | 'edit' | 'view' | 'confirm' | null;
   data?: any;
 };
 
@@ -469,7 +470,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   className = ''
 }) => {
   // Estados locales
-  const [currentView, setCurrentView] = useState<DashboardView>('overview');
+  const [currentView, setCurrentView] = useState<DashboardView>('clients');
   const [modalState, setModalState] = useState<ModalState>({
     type: null,
     mode: null,
@@ -482,9 +483,9 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
     pagination: { page: 1, limit: 10 },
     sort: { field: 'createdAt', direction: 'desc' }
   });
-  const { clients } = useClients({
+  const { clients, loadClients } = useClients({
     pagination: { page: 1, limit: 10 },
-    sort: { field: 'createdAt', direction: 'desc' }
+    sort: { field: 'registrationDate', direction: 'desc' }
   });
   const { appointments } = useAppointments({
     pagination: { page: 1, limit: 10 },
@@ -504,8 +505,16 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
   // Manejadores de modales
   const openModal = useCallback((type: ModalState['type'], mode: ModalState['mode'], data?: any) => {
-    console.log('Opening modal:', { type, mode, data });
-    setModalState({ type, mode, data });
+    console.log('🔥 Opening modal:', { type, mode, data });
+    console.log('🔥 Modal state before:', modalState);
+    const newState = { type, mode, data };
+    setModalState(newState);
+    console.log('🔥 Modal state after setModalState called:', newState);
+    
+    // Verificar después de un pequeño delay que el estado se actualizó
+    setTimeout(() => {
+      console.log('🔥 Modal state verification after timeout:', modalState);
+    }, 100);
   }, []);
 
   const closeModal = useCallback(() => {
@@ -668,8 +677,11 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
   // Renderizar modal según el estado
   const renderModal = () => {
+    console.log('🎭 renderModal called with state:', modalState);
+    console.log('🎭 modalState.type:', modalState.type, 'modalState.mode:', modalState.mode);
+    
     if (!modalState.type || !modalState.mode) {
-      console.log('Modal state invalid:', modalState);
+      console.log('🎭 Modal state invalid - not rendering:', modalState);
       return null;
     }
 
@@ -679,7 +691,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       size: 'xl' as const
     };
 
-    console.log('Rendering modal:', modalState);
+    console.log('🎭 About to render modal with props:', modalProps);
+    console.log('🎭 Modal state for rendering:', modalState);
 
     const getModalTitle = () => {
       const { type, mode, data } = modalState;
@@ -723,29 +736,36 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         return title;
       }
       
+      if (type === 'confirmation') {
+        return data?.title || 'Confirmar acción';
+      }
+      
       return 'Modal';
     };
 
     switch (modalState.type) {
       case 'consultation':
+        console.log('🎭 Rendering consultation modal, mode:', modalState.mode);
         if (modalState.mode === 'view') {
           if (!modalState.data) {
             console.error('No consultation data for view mode');
             return null;
           }
+          console.log('🎭 Returning consultation detail modal');
           return (
-          <Modal {...modalProps} title={getModalTitle()}>
+          <SimpleModal {...modalProps} title={getModalTitle()}>
             <ConsultationDetail
               consultation={modalState.data}
               onEdit={(consultation) => openModal('consultation', 'edit', consultation)}
               onClose={closeModal}
             />
-          </Modal>
+          </SimpleModal>
         );
         }
         
+        console.log('🎭 Returning consultation form modal');
         return (
-          <Modal {...modalProps} title={getModalTitle()}>
+          <SimpleModal {...modalProps} title={getModalTitle()}>
             <ConsultationForm
               consultation={modalState.mode === 'edit' ? modalState.data : undefined}
               onSubmit={(data) => {
@@ -754,54 +774,93 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
               }}
               onCancel={closeModal}
             />
-          </Modal>
+          </SimpleModal>
         );
 
       case 'client':
+        console.log('🎭 Rendering client modal, mode:', modalState.mode, 'data:', modalState.data);
         if (modalState.mode === 'view') {
+          console.log('🎭 Returning client detail modal');
           return (
-            <Modal {...modalProps} title={getModalTitle()}>
+            <SimpleModal {...modalProps} title={getModalTitle()}>
               <ClientDetail
                 clientId={modalState.data?.id}
                 onEdit={(client) => openModal('client', 'edit', client)}
                 onClose={closeModal}
               />
-            </Modal>
+            </SimpleModal>
           );
         }
+        console.log('🎭 Returning client form modal');
         return (
-          <Modal {...modalProps} title={getModalTitle()}>
+          <SimpleModal {...modalProps} title={getModalTitle()}>
             <ClientForm
               client={modalState.mode === 'edit' ? modalState.data : undefined}
-              onSubmit={closeModal}
+              onSubmit={async (data) => {
+                console.log('Client form submitted:', data);
+                // Recargar la lista de clientes después de crear/editar
+                await loadClients();
+                closeModal();
+              }}
               onCancel={closeModal}
             />
-          </Modal>
+          </SimpleModal>
         );
 
       case 'appointment':
+        console.log('🎭 Rendering appointment modal, mode:', modalState.mode);
         if (modalState.mode === 'view') {
+          console.log('🎭 Returning appointment detail modal');
           return (
-            <Modal {...modalProps} title={getModalTitle()}>
+            <SimpleModal {...modalProps} title={getModalTitle()}>
               <AppointmentDetail
                 appointment={modalState.data}
                 onEdit={(appointment) => openModal('appointment', 'edit', appointment)}
                 onClose={closeModal}
               />
-            </Modal>
+            </SimpleModal>
           );
         }
+        console.log('🎭 Returning appointment form modal');
         return (
-          <Modal {...modalProps} title={getModalTitle()}>
+          <SimpleModal {...modalProps} title={getModalTitle()}>
             <AppointmentForm
               appointment={modalState.mode === 'edit' ? modalState.data : undefined}
               onSubmit={closeModal}
               onCancel={closeModal}
             />
-          </Modal>
+          </SimpleModal>
+        );
+
+      case 'confirmation':
+        console.log('🎭 Returning confirmation modal');
+        return (
+          <SimpleModal {...modalProps} title={getModalTitle()}>
+            <div className="text-center">
+              <p className="text-gray-600 mb-6">{modalState.data?.message}</p>
+              <div className="flex justify-center space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={closeModal}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    modalState.data?.onConfirm();
+                    closeModal();
+                  }}
+                >
+                  Confirmar
+                </Button>
+              </div>
+            </div>
+          </SimpleModal>
         );
 
       default:
+        console.log('🎭 Default case reached - unknown modal type:', modalState.type);
         return null;
     }
   };

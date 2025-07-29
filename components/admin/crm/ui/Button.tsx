@@ -66,6 +66,12 @@ const Button: React.FC<ButtonProps> = ({
         ${className}
       `}
       disabled={isDisabled}
+      onClick={(e) => {
+        console.log('🔥 Button onClick triggered:', { variant, size, disabled: isDisabled, props });
+        if (props.onClick && !isDisabled) {
+          props.onClick(e);
+        }
+      }}
       {...props}
     >
       {loading && (

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1?dev",
+        "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime?dev",
+        "react-dom": "https://esm.sh/react-dom@18.3.1?dev",
+        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?dev",
+        "react-router-dom": "https://esm.sh/react-router-dom@6.23.1?dev&external=react",
+        "react-icons/io5": "https://esm.sh/react-icons@5.2.1/io5?dev&external=react",
+        "react-icons/": "https://esm.sh/react-icons@5.2.1/?dev&external=react",
+        "react-icons/si": "https://esm.sh/react-icons@5.2.1/si?dev&external=react",
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js",
+        "react-dom/": "https://esm.sh/react-dom@18.3.1/?dev",
+        "react/": "https://esm.sh/react@18.3.1/?dev",
+        "react-icons": "https://esm.sh/react-icons@5.2.1?dev&external=react",
+        "firebase/": "https://esm.sh/firebase@^12.0.0/"
+      }
+    }
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socio Tecnológico Estratégico & CTIO Fraccional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* Light Theme (Default) */
+        --bg-color: #f1f1f4;
+        --text-color: #1d1d1f;
+        --text-muted: #6e6e73;
+        --primary-color: #007aff;
+        --primary-rgb: 0, 122, 255;
+        --primary-hover: #0062cc;
+        
+        --card-bg: rgba(255, 255, 255, 0.6);
+        --header-bg: rgba(252, 252, 253, 0.75);
+        --border-color: rgba(0, 0, 0, 0.08);
+        --shadow-color: rgba(0, 0, 0, 0.05);
+        --input-bg: rgba(0, 0, 0, 0.04);
+        --nav-inactive-hover-bg: rgba(128, 128, 128, 0.1);
+
+        --gradient-bg: 
+          radial-gradient(at 15% 20%, hsla(270, 80%, 80%, 0.3) 0px, transparent 50%),
+          radial-gradient(at 80% 25%, hsla(212, 98%, 75%, 0.4) 0px, transparent 50%),
+          radial-gradient(at 50% 95%, hsla(340, 90%, 85%, 0.3) 0px, transparent 50%),
+          radial-gradient(at 85% 90%, hsla(30, 95%, 80%, 0.3) 0px, transparent 50%),
+          radial-gradient(at 10% 85%, hsla(220, 90%, 80%, 0.3) 0px, transparent 50%);
+      }
+
+      html[data-theme='dark'] {
+        --bg-color: #161618;
+        --text-color: #f5f5f7;
+        --text-muted: #a1a1a6;
+        --card-bg: rgba(38, 38, 41, 0.6);
+        --header-bg: rgba(22, 22, 24, 0.7);
+        --border-color: rgba(255, 255, 255, 0.1);
+        --shadow-color: rgba(0, 0, 0, 0.2);
+        --input-bg: rgba(255, 255, 255, 0.06);
+        --nav-inactive-hover-bg: rgba(128, 128, 128, 0.15);
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: background-color 0.3s, color 0.3s;
+        zoom: 0.9; /* Escala global al 90% */
+      }
+
+      .gradient-bg {
+        background-color: var(--bg-color);
+        background-image: var(--gradient-bg);
+      }
+      
+      .portfolio-filter-btn {
+        padding: 0.5rem 1.25rem;
+        border-radius: 9999px;
+        transition: all 0.2s ease-in-out;
+        font-weight: 600;
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+      }
+      .portfolio-filter-btn:hover {
+        background-color: var(--nav-inactive-hover-bg);
+        color: var(--text-color);
+      }
+      .portfolio-filter-btn-active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+
+      .category-tag {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      
+      .tech-stack-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background-color: var(--input-bg);
+        border-radius: 0.75rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        transition: all 0.2s ease-in-out;
+      }
+
+      .metric-card {
+        padding: 1rem;
+        border-radius: 1.25rem;
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        text-align: center;
+      }
+
+      @keyframes draw-bar {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      .bar-chart-bar {
+        animation: draw-bar 1.5s ease-out forwards;
+        stroke-linecap: round;
+      }
+
+      .btn-cta {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 600;
+        border-radius: 9999px;
+        transition: all 0.3s ease-in-out;
+        display: inline-block;
+        box-shadow: 0 4px 15px -3px rgba(var(--primary-rgb), 0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: fit-content;
+        padding: 0.5rem 1rem;
+      }
+      .btn-cta:hover {
+        background-color: var(--primary-hover);
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px -5px rgba(var(--primary-rgb), 0.4);
+      }
+      .btn-cta:disabled {
+        background-color: var(--text-muted);
+        cursor: not-allowed;
+        transform: none;
+        opacity: 0.5;
+        box-shadow: none;
+      }
+
+      .header-glass {
+        backdrop-filter: blur(20px);
+        background-color: var(--header-bg);
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.3s, border-color 0.3s;
+      }
+
+      .nav-link-base {
+        padding: 0.5rem 1.25rem;
+        border-radius: 9999px;
+        transition: all 0.2s ease-in-out;
+        font-weight: 600;
+      }
+      .nav-link-active {
+        background-color: var(--primary-color);
+        color: white;
+      }
+      .nav-link-inactive {
+        color: var(--text-color);
+      }
+      .nav-link-inactive:hover {
+        background-color: var(--nav-inactive-hover-bg);
+        color: var(--text-color);
+      }
+
+      .tech-pill-glass {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 9999px;
+        font-weight: 500;
+        color: var(--text-color);
+        backdrop-filter: blur(10px);
+      }
+
+      .differentiator-card-glass {
+        padding: 3rem;
+        border-radius: 2rem;
+        background: linear-gradient(145deg, rgba(var(--primary-rgb), 0.05), rgba(var(--primary-rgb), 0));
+        border: 1px solid var(--border-color);
+      }
+
+      .service-tab {
+        padding: 1rem;
+        border-radius: 1.5rem;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+        width: 100%;
+        text-align: left;
+      }
+
+      .service-tab:hover {
+        background-color: var(--card-bg);
+      }
+
+      .service-tab-active {
+        border-color: var(--primary-color);
+        background-color: var(--card-bg);
+      }
+
+      .service-icon-container-sm {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+      }
+
+      .service-icon-container-sm.strategy { background: linear-gradient(to right, #6b21a8, #9333ea); }
+      .service-icon-container-sm.development { background: linear-gradient(to right, #1d4ed8, #3b82f6); }
+      .service-icon-container-sm.growth { background: linear-gradient(to right, #166534, #22c55e); }
+
+      .service-content-container {
+        min-height: 300px;
+        position: relative;
+      }
+
+      .service-content-panel-animated {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .social-link-glass {
+        color: var(--text-muted);
+        background-color: var(--input-bg);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      .social-link-glass:hover {
+        color: var(--primary-color);
+        background-color: var(--nav-inactive-hover-bg);
+        transform: scale(1.1);
+      }
+
+      .modal-glass-content {
+        background-color: var(--header-bg);
+        backdrop-filter: blur(20px);
+        background-image: var(--gradient-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .progress-step-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background-color: var(--input-bg);
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--text-muted);
+        transition: all 0.3s;
+      }
+      .progress-step-icon-active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+      }
+      .progress-step-track {
+        flex-grow: 1;
+        height: 2px;
+        background-color: var(--border-color);
+        margin: 0 -2.5rem -1.75rem -2.5rem;
+        transition: background-color 0.3s;
+      }
+      .progress-step-track-active {
+        background-color: var(--primary-color);
+      }
+
+      .glass-textarea, .glass-input {
+        width: 100%;
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        padding: 1rem;
+        color: var(--text-color);
+        transition: all 0.3s;
+        padding-left: 3rem;
+      }
+      .glass-textarea { padding-left: 1rem; }
+
+      .glass-textarea:focus, .glass-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
+      }
+
+      .custom-checkbox-glass-container {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .custom-checkbox-glass {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 0.375rem;
+        border: 2px solid var(--border-color);
+        background-color: var(--input-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+
+      .custom-checkbox-glass-checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+
+      .custom-checkbox-glass-checkmark {
+        color: white;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s;
+      }
+
+      .custom-checkbox-glass-checkmark-checked {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .plan-card-glass {
+        padding: 1.5rem;
+        border: 2px solid var(--border-color);
+        border-radius: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .plan-card-glass:hover {
+        background-color: var(--nav-inactive-hover-bg);
+      }
+
+      .plan-card-glass-selected {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
+        background-color: rgba(var(--primary-rgb), 0.1);
+      }
+
+      .btn-secondary-glass {
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        font-weight: 600;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: fit-content;
+      }
+
+      .btn-secondary-glass:hover {
+        background-color: var(--nav-inactive-hover-bg);
+        border-color: var(--text-muted);
+      }
+      
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
+        background-color: var(--input-bg);
+        border-radius: 9999px;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .toggle-switch-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 22px;
+        height: 22px;
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      html[data-theme='dark'] .toggle-switch-thumb {
+        background-color: var(--text-color);
+      }
+      .toggle-switch.dark .toggle-switch-thumb {
+        transform: translateX(22px);
+      }
+    </style>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

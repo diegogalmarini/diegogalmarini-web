@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Zoom general de la aplicación */
+body {
+  zoom: 0.9;
+}
+
+/* Tipografía para logo y títulos */
+.font-black {
+  font-weight: 900;
+}

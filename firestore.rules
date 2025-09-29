@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para usuarios autenticados
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para consultas (consultations)
+    match /consultations/{consultationId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para citas (appointments)
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para configuración del sistema
+    match /config/{configId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Reglas para plantillas de email
+    match /emailTemplates/{templateId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para disponibilidad
+    match /availability/{availabilityId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Regla por defecto: denegar acceso no autenticado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

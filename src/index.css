@@ -1,0 +1,8 @@
+.cta-card-glass {
+  background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  padding: 4rem;
+  box-shadow: 0 10px 25px -5px var(--shadow-color);
+}

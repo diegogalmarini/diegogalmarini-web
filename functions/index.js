@@ -5,28 +5,28 @@ const { setGlobalOptions } = require("firebase-functions/v2/options");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
-const sgMail = require("@sendgrid/mail");
+const { Resend } = require('resend');
 require('dotenv').config();
 
 // Declarar secretos globales para que Firebase los inyecte en tiempo de ejecución
 setGlobalOptions({
-  secrets: ["SENDGRID_API_KEY"],
+  secrets: ["RESEND_API_KEY"],
 });
 
 initializeApp();
 const db = getFirestore();
 
 // Remove top-level secret read to avoid errors at deploy/build time
-// La API Key de SendGrid se establecerá dentro de cada función en tiempo de ejecución
+// La API Key de Resend se establecerá dentro de cada función en tiempo de ejecución
 
 exports.onConsultationCreated = onDocumentCreated("consultations/{consultationId}", async (event) => {
-  // Configurar SendGrid con el secreto en tiempo de ejecución
-  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) {
-    logger.error("SENDGRID_API_KEY no está configurada en los secretos de Functions");
+  // Configurar Resend con el secreto en tiempo de ejecución
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    logger.error("RESEND_API_KEY no está configurada en los secretos de Functions");
     return;
   }
-  sgMail.setApiKey(SENDGRID_API_KEY);
+  const resend = new Resend(RESEND_API_KEY);
 
   const snap = event.data;
   if (!snap) {
@@ -45,12 +45,12 @@ exports.onConsultationCreated = onDocumentCreated("consultations/{consultationId
   const planDescription = planDescriptions[data.selectedPlan] || data.selectedPlan;
 
   // Correo de confirmación para el cliente.
-  const msgClient = {
-    to: data.clientEmail,
+  const clientEmailData = {
     from: {
       name: "Diego Galmarini",
-      email: "hola@diegogalmarini.com", // Dirección de envío verificada en SendGrid
+      email: "hola@diegogalmarini.com", // Dirección de envío verificada en Resend
     },
+    to: [data.clientEmail],
     subject: "🚀 ¡Hemos recibido tu solicitud de consulta!",
     html: `
       <h1>Hola ${data.clientName},</h1>
@@ -69,12 +69,12 @@ exports.onConsultationCreated = onDocumentCreated("consultations/{consultationId
   };
 
   // Correo de notificación para el administrador.
-  const msgAdmin = {
-    to: "diegogalmarini@gmail.com",
+  const adminEmailData = {
     from: {
       name: "Notificaciones Web",
-      email: "hola@diegogalmarini.com", // Dirección de envío verificada en SendGrid
+      email: "hola@diegogalmarini.com", // Dirección de envío verificada en Resend
     },
+    to: ["diegogalmarini@gmail.com"],
     subject: `🔥 Nueva Consulta Recibida: ${data.clientName}`,
     html: `
       <h1>¡Nueva consulta para revisar!</h1>
@@ -93,15 +93,15 @@ exports.onConsultationCreated = onDocumentCreated("consultations/{consultationId
   };
 
   try {
-    await sgMail.send(msgClient);
-    logger.log("Email de confirmación enviado al cliente:", data.clientEmail);
+    const clientResult = await resend.emails.send(clientEmailData);
+    logger.log("Email de confirmación enviado al cliente:", data.clientEmail, "ID:", clientResult.data?.id);
   } catch (error) {
     logger.error("Error enviando email al cliente:", error);
   }
 
   try {
-    await sgMail.send(msgAdmin);
-    logger.log("Email de notificación enviado al administrador.");
+    const adminResult = await resend.emails.send(adminEmailData);
+    logger.log("Email de notificación enviado al administrador. ID:", adminResult.data?.id);
   } catch (error) {
     logger.error("Error enviando email al administrador:", error);
   }
@@ -109,13 +109,13 @@ exports.onConsultationCreated = onDocumentCreated("consultations/{consultationId
 
 // Función para enviar respuestas a consultas
 exports.sendConsultationResponse = onCall(async (request) => {
-  // Configurar SendGrid con el secreto en tiempo de ejecución
-  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) {
-    logger.error("SENDGRID_API_KEY no está configurada en los secretos de Functions");
-    throw new Error("SENDGRID_API_KEY es requerida. Configúrala como secreto en Firebase Functions.");
+  // Configurar Resend con el secreto en tiempo de ejecución
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    logger.error("RESEND_API_KEY no está configurada en los secretos de Functions");
+    throw new Error("RESEND_API_KEY es requerida. Configúrala como secreto en Firebase Functions.");
   }
-  sgMail.setApiKey(SENDGRID_API_KEY);
+  const resend = new Resend(RESEND_API_KEY);
 
   const { consultationId, responseMessage, planType } = request.data;
   
@@ -136,11 +136,11 @@ exports.sendConsultationResponse = onCall(async (request) => {
     
     // Preparar el email
     const msg = {
-      to: consultationData.clientEmail,
       from: {
         name: "Diego Galmarini",
         email: "hola@diegogalmarini.com"
       },
+      to: [consultationData.clientEmail],
       subject: `Re: Tu consulta - ${consultationData.clientName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -174,9 +174,9 @@ exports.sendConsultationResponse = onCall(async (request) => {
       `
     };
     
-    // Enviar el email
-    await sgMail.send(msg);
-    logger.log(`Email de respuesta enviado a: ${consultationData.clientEmail}`);
+    // Enviar el email con Resend
+    const result = await resend.emails.send(msg);
+    logger.log(`Email de respuesta enviado a: ${consultationData.clientEmail}, ID: ${result.data?.id}`);
     
     // Actualizar el estado de la consulta en Firestore
     await consultationRef.update({
@@ -197,12 +197,12 @@ exports.sendConsultationResponse = onCall(async (request) => {
 
 // Nueva función: enviar emails de plantillas de Citas
 exports.sendAppointmentEmail = onCall(async (request) => {
-  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) {
-    logger.error("SENDGRID_API_KEY no está configurada en los secretos de Functions");
-    throw new Error("SENDGRID_API_KEY es requerida. Configúrala como secreto en Firebase Functions.");
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    logger.error("RESEND_API_KEY no está configurada en los secretos de Functions");
+    throw new Error("RESEND_API_KEY es requerida. Configúrala como secreto en Firebase Functions.");
   }
-  sgMail.setApiKey(SENDGRID_API_KEY);
+  const resend = new Resend(RESEND_API_KEY);
 
   const { clientEmail, clientName, subject, message, appointment } = request.data || {};
   if (!clientEmail || !subject || !message) {
@@ -225,8 +225,8 @@ exports.sendAppointmentEmail = onCall(async (request) => {
   ` : '';
 
   const msgClient = {
-    to: clientEmail,
     from: { name: 'Diego Galmarini', email: 'hola@diegogalmarini.com' },
+    to: [clientEmail],
     subject: subject,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
@@ -239,8 +239,8 @@ exports.sendAppointmentEmail = onCall(async (request) => {
   };
 
   try {
-    await sgMail.send(msgClient);
-    logger.log('Email de cita enviado a:', clientEmail);
+    const result = await resend.emails.send(msgClient);
+    logger.log('Email de cita enviado a:', clientEmail, 'ID:', result.data?.id);
   } catch (error) {
     logger.error('Error enviando email de cita:', error);
     throw new Error('Error enviando email de cita');
@@ -249,8 +249,8 @@ exports.sendAppointmentEmail = onCall(async (request) => {
   // Notificación opcional al administrador (silenciosa)
   try {
     const msgAdmin = {
-      to: 'hola@diegogalmarini.com',
       from: { name: 'Diego Galmarini', email: 'hola@diegogalmarini.com' },
+      to: ['hola@diegogalmarini.com'],
       subject: `Copia: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
@@ -260,7 +260,8 @@ exports.sendAppointmentEmail = onCall(async (request) => {
         </div>
       `,
     };
-    await sgMail.send(msgAdmin);
+    const adminResult = await resend.emails.send(msgAdmin);
+    logger.log('Copia enviada al administrador. ID:', adminResult.data?.id);
   } catch (error) {
     logger.warn('No se pudo enviar copia al administrador:', error);
   }

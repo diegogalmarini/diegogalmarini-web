@@ -90,26 +90,26 @@
    BRANDING THEME (Restored)
    =================================================================== */
 :root {
-  --dg-bg: #f8f9fb;
+  --dg-bg: linear-gradient(180deg, #f8faff 0%, #eef4ff 100%);
   --dg-bg-alt: #ffffff;
-  --dg-bg-accent: #eef2f7;
-  --dg-text: #0f1115;
-  --dg-text-muted: #5a6475;
-  --dg-primary: #0672ff;
-  --dg-primary-hover: #005ee0;
-  --dg-primary-soft: #e1efff;
-  --dg-border: #dde2ea;
-  --dg-border-strong: #c2c9d3;
+  --dg-bg-accent: #f3f7ff;
+  --dg-text: #1a202c;
+  --dg-text-muted: #4a5568;
+  --dg-primary: #3182ff;
+  --dg-primary-hover: #2563eb;
+  --dg-primary-soft: #eff6ff;
+  --dg-border: #e2e8f0;
+  --dg-border-strong: #cbd5e0;
   --dg-focus: #3182ff;
   --dg-danger: #dc2626;
-  --dg-radius-sm: 6px;
-  --dg-radius: 14px;
+  --dg-radius-sm: 8px;
+  --dg-radius: 16px;
   --dg-radius-full: 999px;
-  --dg-shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.06);
-  --dg-shadow: 0 4px 16px -4px rgba(15,17,21,.08), 0 8px 28px -6px rgba(15,17,21,.06);
-  --dg-glass-bg: rgba(255,255,255,0.75);
-  --dg-glass-border: rgba(255,255,255,0.45);
-  --dg-input-bg: #f1f3f6;
+  --dg-shadow-sm: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --dg-shadow: 0 10px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+  --dg-glass-bg: rgba(255,255,255,0.8);
+  --dg-glass-border: rgba(255,255,255,0.5);
+  --dg-input-bg: #f7fafc;
 }
 
 .dark {
@@ -130,8 +130,14 @@
 }
 
 body {
-  background: linear-gradient(180deg,var(--dg-bg-alt) 0%, var(--dg-bg) 80%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: var(--dg-text);
+  min-height: 100vh;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%),
+              linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
 }
 
 /* ---------- Reusable Utilities ---------- */

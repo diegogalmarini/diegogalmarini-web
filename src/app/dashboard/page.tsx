@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyIdToken } from '@/lib/firebase/verify-session'
 import DashboardClient from '@/components/dashboard/DashboardClient'
+import { getConsultations, getAppointments } from '@/lib/firebase/admin-firestore-service'
 
 export default async function DashboardPage() {
   // Check authentication
@@ -19,6 +20,10 @@ export default async function DashboardPage() {
     redirect('/')
   }
 
+  // Fetch consultations and appointments
+  const consultations = await getConsultations()
+  const appointments = await getAppointments()
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -31,7 +36,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         
-        <DashboardClient />
+        <DashboardClient consultations={consultations} appointments={appointments} />
       </div>
     </div>
   )

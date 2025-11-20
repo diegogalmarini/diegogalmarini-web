@@ -1,5 +1,6 @@
 import { initializeApp, cert, getApps, getApp, App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Las credenciales leídas desde las variables de entorno del servidor.
 const serviceAccount = {
@@ -17,3 +18,5 @@ const app: App = !getApps().length
   : getApps()[0];
 
 export const adminAuth = getAuth(app);
+export const adminDb = getFirestore(app);
+export { app };

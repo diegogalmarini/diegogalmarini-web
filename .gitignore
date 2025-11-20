@@ -16,6 +16,9 @@ dist-ssr
 .next/
 out/
 
+# TypeScript
+*.tsbuildinfo
+
 # Environment variables
 .env
 .env.local

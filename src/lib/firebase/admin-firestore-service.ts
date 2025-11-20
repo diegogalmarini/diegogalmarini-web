@@ -7,10 +7,16 @@ import { adminDb } from "./admin-config";
 export async function getConsultations() {
   try {
     const snapshot = await adminDb.collection("consultations").get();
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps to ISO strings for serialization
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+      };
+    });
   } catch (error: any) {
     console.error("Error al obtener consultas:", error);
     return [];
@@ -24,10 +30,16 @@ export async function getConsultations() {
 export async function getAppointments() {
   try {
     const snapshot = await adminDb.collection("appointments").get();
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps to ISO strings for serialization
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+      };
+    });
   } catch (error: any) {
     console.error("Error al obtener citas:", error);
     return [];

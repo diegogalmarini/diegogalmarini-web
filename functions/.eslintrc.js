@@ -14,8 +14,17 @@ module.exports = {
   ],
   rules: {
     "quotes": ["error", "double"],
-    "max-len": "off", // Mantenemos desactivada la regla de longitud máxima.
-    "indent": "off", // Desactivamos la regla de indentación para evitar conflictos.
-    "arrow-parens": "off", // Desactivamos para más flexibilidad.
+    "max-len": "off",
+    "indent": "off",
+    "arrow-parens": "off",
+    "linebreak-style": "off",
+    "no-undef": "off",
+    "object-curly-spacing": "off",
+    "brace-style": "off",
+    "block-spacing": "off",
+    "no-empty": "off",
+    "no-useless-escape": "off",
+    "no-unused-vars": "off",
+    "eol-last": "off",
   },
 };

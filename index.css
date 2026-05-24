@@ -2,12 +2,225 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Zoom general de la aplicación */
+/* Variables CSS para temas */
+:root {
+  /* Light Theme (Default) */
+  --bg-color: #f1f1f4;
+  --text-color: #1d1d1f;
+  --text-muted: #6e6e73;
+  --primary-color: #007aff;
+  --primary-rgb: 0, 122, 255;
+  --primary-hover: #0062cc;
+  
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --header-bg: rgba(252, 252, 253, 0.75);
+  --border-color: rgba(0, 0, 0, 0.15);
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --input-bg: rgba(0, 0, 0, 0.08);
+  --nav-inactive-hover-bg: rgba(128, 128, 128, 0.1);
+
+  --gradient-bg: 
+    radial-gradient(at 15% 20%, hsla(270, 80%, 80%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 80% 25%, hsla(212, 98%, 75%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 95%, hsla(340, 90%, 85%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 85% 90%, hsla(30, 95%, 80%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 10% 85%, hsla(220, 90%, 80%, 0.3) 0px, transparent 50%);
+}
+
+html[data-theme='dark'] {
+  --bg-color: #161618;
+  --text-color: #f5f5f7;
+  --text-muted: #a1a1a6;
+  --card-bg: rgba(38, 38, 41, 0.6);
+  --header-bg: rgba(22, 22, 24, 0.7);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --input-bg: rgba(255, 255, 255, 0.12);
+  --nav-inactive-hover-bg: rgba(128, 128, 128, 0.15);
+}
+
 body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s, color 0.3s;
   zoom: 0.9;
 }
 
-/* Tipografía para logo y títulos */
 .font-black {
   font-weight: 900;
+}
+
+.gradient-bg {
+  background-color: var(--bg-color);
+  background-image: var(--gradient-bg);
+}
+
+.header-glass {
+  backdrop-filter: blur(20px);
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.nav-link-base {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+  font-weight: 600;
+}
+
+.nav-link-active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.nav-link-inactive {
+  color: var(--text-color);
+}
+
+.nav-link-inactive:hover {
+  background-color: var(--nav-inactive-hover-bg);
+  color: var(--text-color);
+}
+
+.tech-pill-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  font-weight: 500;
+  color: var(--text-color);
+  backdrop-filter: blur(10px);
+}
+
+.differentiator-card-glass {
+  padding: 3rem;
+  border-radius: 2rem;
+  background: linear-gradient(145deg, rgba(var(--primary-rgb), 0.05), rgba(var(--primary-rgb), 0));
+  border: 1px solid var(--border-color);
+}
+
+.service-tab {
+  padding: 1rem;
+  border-radius: 1.5rem;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  width: 100%;
+  text-align: left;
+}
+
+.service-tab:hover {
+  background-color: var(--card-bg);
+}
+
+.service-tab-active {
+  border-color: var(--primary-color);
+  background-color: var(--card-bg);
+}
+
+.service-icon-container-sm {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.service-icon-container-sm.strategy { background: linear-gradient(to right, #6b21a8, #9333ea); }
+.service-icon-container-sm.development { background: linear-gradient(to right, #1d4ed8, #3b82f6); }
+.service-icon-container-sm.growth { background: linear-gradient(to right, #166534, #22c55e); }
+
+.service-content-container {
+  min-height: 300px;
+  position: relative;
+}
+
+/* Componentes personalizados */
+@layer components {
+  .btn-cta {
+    @apply bg-[var(--primary-color)] text-white px-6 py-2 rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply border border-[var(--border-color)] text-[var(--text-color)] px-6 py-2 rounded-lg font-medium hover:bg-[var(--card-bg)] transition-all duration-300;
+  }
+  
+  .btn-secondary-glass {
+    @apply border border-[var(--border-color)] text-[var(--text-color)] px-6 py-2 rounded-lg font-medium bg-[var(--card-bg)] backdrop-blur-sm hover:bg-[var(--input-bg)] transition-all duration-300;
+  }
+  
+  .glass-card {
+    @apply bg-[var(--card-bg)] backdrop-blur-sm border border-[var(--border-color)] rounded-xl shadow-lg;
+  }
+  
+  .glass-input {
+    @apply w-full px-4 py-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition-all duration-300;
+  }
+  
+  .glass-textarea {
+    @apply w-full px-4 py-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition-all duration-300 resize-none;
+  }
+  
+  .plan-card-glass {
+    @apply p-4 border border-[var(--border-color)] rounded-xl bg-[var(--card-bg)] backdrop-blur-sm cursor-pointer transition-all duration-300 hover:border-[var(--primary-color)] hover:shadow-lg;
+  }
+  
+  .plan-card-glass-selected {
+    @apply border-[var(--primary-color)] shadow-lg;
+    background-color: rgba(var(--primary-rgb), 0.1);
+  }
+  
+  .custom-checkbox-glass-container {
+    @apply flex items-start cursor-pointer;
+  }
+  
+  .custom-checkbox-glass {
+    @apply w-5 h-5 border-2 border-[var(--border-color)] rounded bg-[var(--input-bg)] flex items-center justify-center transition-all duration-300;
+  }
+  
+  .custom-checkbox-glass-checked {
+    @apply border-[var(--primary-color)] bg-[var(--primary-color)];
+  }
+  
+  .custom-checkbox-glass-checkmark {
+    @apply text-white text-sm opacity-0 transition-opacity duration-300;
+  }
+  
+  .custom-checkbox-glass-checkmark-checked {
+    @apply opacity-100;
+  }
+  
+  .modal-glass-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50;
+  }
+  
+  .modal-glass-content {
+    @apply bg-[var(--card-bg)] backdrop-blur-md border border-[var(--border-color)] rounded-2xl shadow-2xl;
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-primary {
+    scrollbar-color: var(--primary-color) transparent;
+  }
+}
+
+.cta-card-glass {
+  background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  padding: 4rem;
+  box-shadow: 0 10px 25px -5px var(--shadow-color);
 }

@@ -41,7 +41,7 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
             <span className="text-3xl font-black tracking-tight text-[var(--text-color)]">Diego Galmarini</span>
           </Link>
           <div className="flex-1 flex justify-center">
-            <nav className="hidden md:flex items-center space-x-1 bg-[var(--input-bg)] p-1 rounded-full border border-[var(--border-color)]"> {/* Reduced spacing and padding for cleaner look */}
+            <nav className="hidden md:flex items-center space-x-1 p-1 rounded-full border border-[var(--border-color)] bg-transparent">
               <NavItem to="/">Inicio</NavItem>
               <NavItem to="/services">Servicios</NavItem>
               <NavItem to="/portfolio">Casos de Estudio</NavItem>

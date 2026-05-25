@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { GooglePartnerIcon } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { IoMenu, IoClose } from 'react-icons/io5';
+import { IoMenu, IoClose, IoLockClosedOutline } from 'react-icons/io5';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
@@ -47,16 +47,29 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
               <NavItem to="/portfolio">Casos de Estudio</NavItem>
               <NavItem to="/about">Sobre Mí</NavItem>
               <NavItem to="/blog">Blog IA</NavItem>
-              <NavItem to={getDashboardRoute()}>{getDashboardLabel()}</NavItem>
             </nav>
           </div>
-          <div className="hidden md:flex items-center justify-end space-x-6"> {/* Increased spacing */}
+          <div className="hidden md:flex items-center justify-end space-x-4"> {/* Increased spacing */}
             <button onClick={onBookCallClick} className="btn-cta px-6 py-2">
               Agendar Llamada
             </button>
             <ThemeSwitcher />
+            <button 
+              onClick={onLoginClick} 
+              aria-label="Acceso" 
+              className="text-[var(--text-color)] opacity-40 hover:opacity-90 transition-opacity p-1.5 hover:bg-[var(--nav-inactive-hover-bg)] rounded-lg cursor-pointer flex items-center justify-center"
+            >
+              <IoLockClosedOutline className="text-lg" />
+            </button>
           </div>
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-2">
+            <button 
+              onClick={onLoginClick} 
+              aria-label="Acceso" 
+              className="text-[var(--text-color)] opacity-40 p-2 hover:bg-[var(--nav-inactive-hover-bg)] rounded-lg flex items-center justify-center"
+            >
+              <IoLockClosedOutline className="text-xl" />
+            </button>
             <button onClick={() => setIsOpen(!isOpen)} className="text-[var(--text-color)] text-3xl z-50">
               {isOpen ? <IoClose /> : <IoMenu />}
             </button>
@@ -71,7 +84,6 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
             <NavItem to="/portfolio" onClick={closeMenu}>Casos de Estudio</NavItem>
             <NavItem to="/about" onClick={closeMenu}>Sobre Mí</NavItem>
             <NavItem to="/blog" onClick={closeMenu}>Blog IA</NavItem>
-            <NavItem to={getDashboardRoute()} onClick={closeMenu}>{getDashboardLabel()}</NavItem>
             <button onClick={() => { onBookCallClick(); closeMenu(); }} className="btn-cta mt-4 w-full text-sm py-3 px-6">
               Agendar Llamada
             </button>

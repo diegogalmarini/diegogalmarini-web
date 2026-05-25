@@ -39,6 +39,10 @@ html[data-theme='dark'] {
   --nav-inactive-hover-bg: rgba(128, 128, 128, 0.15);
 }
 
+html {
+  font-size: 90%;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-color);

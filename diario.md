@@ -85,7 +85,11 @@ Desarrollar el rediseño integral de la web pública de Diego Galmarini para con
 * **Visualización de Ahorro:** Muestra en tiempo real estimaciones de ahorro económico anual (en USD) y reducción de CO2 (en kg) según el consumo y los aparatos seleccionados.
 * **Inyección de Simulación:** Al agendar desde la calculadora, el sistema pre-carga toda la simulación en el formulario de reserva, brindándote llamadas de consultoría ya cualificadas y listas para cerrar.
 
-### 🧪 Verificaciones y Compilación
+### 🧪 Verificaciones, Compilación e Historial
 * **Typecheck:** `npm run typecheck` completado exitosamente con 0 errores.
-* **Build de Producción:** Iniciado el empaquetado final de Vite para producción.
+* **Build de Producción:** Ejecutado `npm run build` con éxito, generando los archivos minificados optimizados en `/dist`.
+* **Clon de WhatsApp (Completado):** Desarrollado e integrado el componente `WhatsAppClone` de forma global, logrando simular conversaciones técnicas y precargar las reservas en el CRM.
+* **Respaldo en GitHub (Completado):** Commiteado y subido todo el código a GitHub en las ramas `main` y `vite-crm`.
+* **Estado de Despliegue Live:** La compilación de producción está lista en `/dist`. Para realizar el despliegue a tu dominio en Firebase Hosting, es necesario actualizar tus credenciales locales en la terminal ejecutando `firebase login --reauth` en tu consola interactiva, ya que el token actual está expirado y la CLI de Firebase rechaza comandos en entornos no interactivos. Una vez re-autenticado, ejecuta `firebase deploy --only hosting` para publicar los cambios.
+
 

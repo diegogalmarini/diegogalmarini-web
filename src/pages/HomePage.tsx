@@ -6,6 +6,7 @@ import { CaseStudy, Pill, Differentiator, FaqItem as FaqItemType } from '../type
 import { TestimonialSlider } from '../components/TestimonialSlider';
 import { ClientLogos } from '../components/ClientLogos';
 import { IoCheckmarkCircle } from 'react-icons/io5';
+import PricingWidget from '../components/pricing/PricingWidget';
 
 const CaseStudyCard: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy }) => (
     <Card className="flex flex-col group overflow-hidden">
@@ -168,6 +169,11 @@ const HomePage: React.FC<{ onBookCallClick: () => void }> = ({ onBookCallClick }
                         ))}
                     </div>
                 </div>
+            </section>
+
+            {/* Pricing / Consulting Plans Section */}
+            <section className="py-28 bg-[rgba(var(--primary-rgb),0.02)] border-y border-[var(--border-color)]">
+                <PricingWidget onSelectPlan={onBookCallClick} />
             </section>
 
             {/* Client Logos Section */}

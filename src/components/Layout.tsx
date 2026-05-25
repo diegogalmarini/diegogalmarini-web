@@ -25,7 +25,7 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
   // Determinar la ruta del dashboard según el rol
   const getDashboardRoute = () => {
     if (!user) return '/login';
-    return isAdmin ? '/paneldecontrol' : '/dashboard';
+    return isAdmin ? '/admin/crm' : '/dashboard';
   };
 
   const getDashboardLabel = () => {
@@ -46,7 +46,8 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
               <NavItem to="/services">Servicios</NavItem>
               <NavItem to="/portfolio">Casos de Estudio</NavItem>
               <NavItem to="/about">Sobre Mí</NavItem>
-              <NavItem to="/admin/crm">CRM (Debug)</NavItem>
+              <NavItem to="/blog">Blog IA</NavItem>
+              <NavItem to={getDashboardRoute()}>{getDashboardLabel()}</NavItem>
             </nav>
           </div>
           <div className="hidden md:flex items-center justify-end space-x-6"> {/* Increased spacing */}
@@ -63,12 +64,14 @@ const Header: React.FC<{ onBookCallClick: () => void; onLoginClick: () => void; 
         </div>
       </div>
       {isOpen && (
-        <div className="md:hidden pb-4">
+         <div className="md:hidden pb-4">
           <nav className="px-4 pt-2 pb-3 space-y-2 flex flex-col items-center">
             <NavItem to="/" onClick={closeMenu}>Inicio</NavItem>
             <NavItem to="/services" onClick={closeMenu}>Servicios</NavItem>
             <NavItem to="/portfolio" onClick={closeMenu}>Casos de Estudio</NavItem>
             <NavItem to="/about" onClick={closeMenu}>Sobre Mí</NavItem>
+            <NavItem to="/blog" onClick={closeMenu}>Blog IA</NavItem>
+            <NavItem to={getDashboardRoute()} onClick={closeMenu}>{getDashboardLabel()}</NavItem>
             <button onClick={() => { onBookCallClick(); closeMenu(); }} className="btn-cta mt-4 w-full text-sm py-3 px-6">
               Agendar Llamada
             </button>

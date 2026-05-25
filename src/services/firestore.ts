@@ -28,6 +28,7 @@ import {
   MessageTemplate,
   CommunicationLog,
   FollowUp,
+  BlogPost,
   ConsultationFilters,
   ClientFilters,
   AppointmentFilters,
@@ -48,7 +49,8 @@ export const COLLECTIONS = {
   MESSAGE_TEMPLATES: 'messageTemplates',
   COMMUNICATION_LOGS: 'communicationLogs',
   FOLLOW_UPS: 'followUps',
-  USERS: 'users'
+  USERS: 'users',
+  BLOG: 'blog'
 } as const;
 
 // Utilidades para conversión de datos
@@ -1473,6 +1475,151 @@ export const metricsService = {
     } catch (error) {
       console.error('Error getting dashboard metrics:', error);
       return { success: false, error: 'Error al obtener las métricas del dashboard' };
+    }
+  }
+};
+
+export const blogService = {
+  // Crear nuevo post
+  async create(post: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<BlogPost>> {
+    try {
+      const now = new Date().toISOString();
+      const postData = {
+        ...post,
+        createdAt: convertStringToTimestamp(now),
+        updatedAt: convertStringToTimestamp(now)
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTIONS.BLOG), postData);
+      const newPost: BlogPost = {
+        ...post,
+        id: docRef.id,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      return { success: true, data: newPost };
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      return { success: false, error: 'Error al crear el artículo' };
+    }
+  },
+
+  // Obtener post por ID
+  async getById(id: string): Promise<ApiResponse<BlogPost>> {
+    try {
+      const docRef = doc(db, COLLECTIONS.BLOG, id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        return { success: false, error: 'Artículo no encontrado' };
+      }
+
+      const data = docSnap.data();
+      const post: BlogPost = {
+        id: docSnap.id,
+        ...data,
+        createdAt: convertTimestampToString(data.createdAt),
+        updatedAt: convertTimestampToString(data.updatedAt)
+      } as BlogPost;
+
+      return { success: true, data: post };
+    } catch (error) {
+      console.error('Error getting blog post by id:', error);
+      return { success: false, error: 'Error al obtener el artículo' };
+    }
+  },
+
+  // Obtener post por slug
+  async getBySlug(slug: string): Promise<ApiResponse<BlogPost>> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BLOG),
+        where('slug', '==', slug),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        return { success: false, error: 'Artículo no encontrado' };
+      }
+
+      const docSnap = querySnapshot.docs[0];
+      const data = docSnap.data();
+      const post: BlogPost = {
+        id: docSnap.id,
+        ...data,
+        createdAt: convertTimestampToString(data.createdAt),
+        updatedAt: convertTimestampToString(data.updatedAt)
+      } as BlogPost;
+
+      return { success: true, data: post };
+    } catch (error) {
+      console.error('Error getting blog post by slug:', error);
+      return { success: false, error: 'Error al obtener el artículo' };
+    }
+  },
+
+  // Obtener todos los posts
+  async getAll(includeInactive = false): Promise<ApiResponse<BlogPost[]>> {
+    try {
+      const constraints: QueryConstraint[] = [orderBy('publishedAt', 'desc')];
+      if (!includeInactive) {
+        constraints.push(where('isActive', '==', true));
+      }
+
+      const q = query(collection(db, COLLECTIONS.BLOG), ...constraints);
+      const querySnapshot = await getDocs(q);
+
+      const posts: BlogPost[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: convertTimestampToString(data.createdAt),
+          updatedAt: convertTimestampToString(data.updatedAt)
+        } as BlogPost;
+      });
+
+      return { success: true, data: posts };
+    } catch (error) {
+      console.error('Error getting all blog posts:', error);
+      return { success: false, error: 'Error al obtener los artículos' };
+    }
+  },
+
+  // Actualizar post
+  async update(id: string, updates: Partial<BlogPost>): Promise<ApiResponse<BlogPost>> {
+    try {
+      const docRef = doc(db, COLLECTIONS.BLOG, id);
+      const updateData = {
+        ...updates,
+        updatedAt: convertStringToTimestamp(new Date().toISOString())
+      };
+
+      delete updateData.id;
+      delete updateData.createdAt;
+
+      await updateDoc(docRef, updateData);
+
+      const updatedDoc = await this.getById(id);
+      return updatedDoc;
+    } catch (error) {
+      console.error('Error updating blog post:', error);
+      return { success: false, error: 'Error al actualizar el artículo' };
+    }
+  },
+
+  // Eliminar post
+  async delete(id: string): Promise<ApiResponse<void>> {
+    try {
+      const docRef = doc(db, COLLECTIONS.BLOG, id);
+      await deleteDoc(docRef);
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting blog post:', error);
+      return { success: false, error: 'Error al eliminar el artículo' };
     }
   }
 };

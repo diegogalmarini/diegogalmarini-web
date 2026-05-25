@@ -29,6 +29,9 @@ export { default as PlanManager } from './plans/PlanManager';
 export { default as PlanList } from './plans/PlanList';
 export { default as PlanForm } from './plans/PlanForm';
 
+// Componentes de blog
+export { default as BlogManager } from './blog/BlogManager';
+
 // Componentes UI reutilizables
 export { default as LoadingSpinner } from './ui/LoadingSpinner';
 export { default as Alert } from './ui/Alert';

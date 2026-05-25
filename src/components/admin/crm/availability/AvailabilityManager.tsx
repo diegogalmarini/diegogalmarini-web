@@ -3,8 +3,8 @@
 // Permite configurar horarios disponibles y bloquear períodos específicos
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import type { AvailabilitySlot, BlockedPeriod, DayOfWeek } from '../../../../types/crm';
-import { useAvailability } from '../../../../hooks/useCRM';
+import type { AvailabilitySlot, BlockedPeriod, DayOfWeek, Appointment, Consultation } from '../../../../types/crm';
+import { useAvailability, useAppointments, useConsultations } from '../../../../hooks/useCRM';
 import Button from '../ui/Button';
 import { Input, Select, Checkbox } from '../ui/FormField';
 import Badge from '../ui/Badge';
@@ -561,6 +561,9 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
     deleteBlockedPeriod
   } = useAvailability();
 
+  const { appointments } = useAppointments();
+  const { consultations } = useConsultations();
+
   // Fetch Google Calendar Events
   useEffect(() => {
     const fetchGoogleEvents = async () => {
@@ -646,7 +649,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
               <div>
                 <h4 className="font-medium text-red-900">{title}</h4>
                 <p className="text-sm text-red-700">
-                  {period.type === 'full_day' ? 'Todo el día' : `${period.startTime} - ${period.endTime}`}
+                  {period.type === 'full_day' ? 'Todo el día' : `${period.startTime || '09:00'} - ${period.endTime || '17:00'}`}
                 </p>
               </div>
             </div>
@@ -666,6 +669,109 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
               <span className="block text-gray-500">Fin</span>
               <span className="font-medium">{format(parseISO(period.endDate), 'dd MMM yyyy', { locale: es })}</span>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (type === 'appointment') {
+      const apt = data as Appointment;
+      return (
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <CalendarIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-900">{title}</h4>
+                <p className="text-sm text-blue-700">
+                  {apt.startTime} - {apt.endTime} ({apt.duration} min)
+                </p>
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {apt.status === 'scheduled' ? 'Programada' : apt.status === 'confirmed' ? 'Confirmada' : apt.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="block text-gray-500 font-semibold">Cliente</span>
+              <span className="font-medium text-gray-900">{apt.clientName || 'Sin asignar'}</span>
+            </div>
+            <div>
+              <span className="block text-gray-500 font-semibold">Fecha</span>
+              <span className="font-medium text-gray-900">{format(parseISO(apt.date), 'dd MMMM yyyy', { locale: es })}</span>
+            </div>
+            {apt.meetingLink && (
+              <div>
+                <span className="block text-gray-500 font-semibold">Enlace de videollamada</span>
+                <a href={apt.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium inline-block mt-1">
+                  🎥 Unirse a Google Meet
+                </a>
+              </div>
+            )}
+            {apt.notes && (
+              <div>
+                <span className="block text-gray-500 font-semibold">Notas</span>
+                <p className="bg-gray-50 p-2 rounded text-gray-700 mt-1 whitespace-pre-wrap">{apt.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (type === 'consultation') {
+      const cons = data as Consultation;
+      return (
+        <div className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-yellow-100 p-2 rounded-full">
+                <ClockIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div>
+                <h4 className="font-medium text-yellow-900">{title}</h4>
+                <p className="text-sm text-yellow-700">
+                  Plan: {cons.planType || 'General'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-2 flex space-x-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                Prioridad: {cons.priority}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                Estado: {cons.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="block text-gray-500 font-semibold">Cliente</span>
+              <span className="font-medium text-gray-900">{cons.clientName || 'Prospecto'}</span>
+            </div>
+            {cons.clientEmail && (
+              <div>
+                <span className="block text-gray-500 font-semibold">Email</span>
+                <a href={`mailto:${cons.clientEmail}`} className="text-blue-600 hover:underline">{cons.clientEmail}</a>
+              </div>
+            )}
+            {cons.message && (
+              <div>
+                <span className="block text-gray-500 font-semibold">Mensaje de consulta</span>
+                <p className="bg-gray-50 p-2 rounded text-gray-700 mt-1 whitespace-pre-wrap">{cons.message}</p>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -821,6 +927,8 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
             )}
 
             <Calendar
+              appointments={appointments}
+              consultations={consultations}
               blockedPeriods={[...blockedPeriods, ...googleEvents]}
               onDateSelect={handleDateSelect}
               onEventClick={handleEventClick}

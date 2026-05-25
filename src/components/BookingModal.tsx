@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
+import { usePlans } from '../contexts/PlansContext';
 import {
   IoCalendarOutline,
   IoClose,
@@ -15,13 +16,24 @@ import {
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  preselectedPlanId?: string;
+  prefilledNotes?: string;
 }
 
-const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
+const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, preselectedPlanId, prefilledNotes }) => {
+  const { plans } = usePlans();
   const [step, setStep] = useState(1); // 1: Calendario, 2: Detalles
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Encontrar el plan seleccionado, por defecto usar 'express'
+  const activePlan = React.useMemo(() => {
+    const plan = plans.find(p => p.id === preselectedPlanId);
+    if (plan) return plan;
+    // Si no se pasa plan o no existe, buscar el de 'express' (Sesión Estratégica)
+    return plans.find(p => p.id === 'express') || plans[0];
+  }, [plans, preselectedPlanId]);
 
   // Datos del formulario
   const [formData, setFormData] = useState({
@@ -50,8 +62,10 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =>
       setFormData({ nombre: '', email: '', notas: '' });
       setError('');
       setSuccess(false);
+    } else if (prefilledNotes) {
+      setFormData(prev => ({ ...prev, notas: prefilledNotes }));
     }
-  }, [isOpen]);
+  }, [isOpen, prefilledNotes]);
 
   if (!isOpen) return null;
 
@@ -217,19 +231,20 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =>
       const start = selectedDate ? new Date(selectedDate) : new Date();
       start.setHours(h || 0, m || 0, 0, 0);
 
-      // Calcular hora de fin (30 minutos después)
-      const end = new Date(start.getTime() + 30 * 60 * 1000);
+      // Calcular hora de fin (duración del plan o 30 min por defecto)
+      const durationMinutes = activePlan?.duration || 30;
+      const end = new Date(start.getTime() + (durationMinutes > 0 ? durationMinutes : 30) * 60 * 1000);
 
       await addDoc(collection(db, 'consultations'), {
         // Campos que espera el CRM
         clientName: formData.nombre,
         clientEmail: formData.email,
-        subject: 'Sesión Estratégica de Innovación',
+        subject: activePlan ? `Sesión Estratégica: ${activePlan.name}` : 'Sesión Estratégica de Innovación',
         message: formData.notas || '',
-        services: ['Sesión Estratégica de Innovación'],
+        services: [activePlan ? activePlan.name : 'Sesión Estratégica de Innovación'],
         priority: 'medium' as const,
-        planType: '30min' as const,
-        paymentStatus: 'free' as const,
+        planType: (activePlan?.id === 'free' ? 'mail' : activePlan?.id === 'express' ? '30min' : activePlan?.id === 'complete' ? '60min' : 'custom') as any,
+        paymentStatus: (activePlan?.price === 0 ? 'free' : 'pending') as any,
         status: 'pending' as const,
         source: 'website' as const,
 
@@ -275,17 +290,21 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =>
             </div>
 
             <h2 className="text-2xl font-bold text-[var(--text-color)] mb-4">
-              Sesión Estratégica de Innovación
+              {activePlan?.name || 'Sesión Estratégica de Innovación'}
             </h2>
 
             <div className="space-y-4 mb-6">
               <div className="flex items-center text-[var(--text-color)]">
                 <IoCalendarOutline className="w-5 h-5 mr-3 text-[var(--primary-color)]" />
-                <span className="text-sm">30 minutos</span>
+                <span className="text-sm">
+                  {activePlan?.duration > 0 ? `${activePlan.duration} minutos de sesión` : 'Formato escrito (correo)'}
+                </span>
               </div>
               <div className="flex items-start text-[var(--text-color)]">
                 <IoInformationCircleOutline className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 text-[var(--primary-color)]" />
-                <span className="text-sm">Virtual (el enlace se enviará tras la confirmación)</span>
+                <span className="text-sm">
+                  {activePlan?.price > 0 ? `Consultoría Premium ($${activePlan.price} USD)` : 'Asesoría Inicial Gratuita'}
+                </span>
               </div>
               {selectedDate && selectedTime && (
                 <div className="bg-[var(--primary-color)]/10 p-4 rounded-lg border-l-4 border-[var(--primary-color)] shadow-sm">

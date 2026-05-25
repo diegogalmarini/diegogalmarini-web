@@ -482,3 +482,20 @@ export interface Plan {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  publishedAt: string;
+  author: string;
+  readTime: string;
+  category: string;
+  tags: string[];
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

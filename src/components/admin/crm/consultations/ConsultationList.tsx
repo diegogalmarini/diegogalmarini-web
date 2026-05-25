@@ -322,52 +322,43 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Header con estadísticas */}
+      {/* Header con estadísticas compactas e interactivas */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <ClockIcon className="h-8 w-8 text-yellow-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Pendientes</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <ChatBubbleLeftRightIcon className="h-8 w-8 text-blue-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">En progreso</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.contacted}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">✓</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Completadas</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.completed}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-gray-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">#</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Total</p>
-                <p className="text-2xl font-semibold text-gray-900">{totalItems}</p>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-wrap gap-3 items-center mb-1 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Filtros Rápidos:</span>
+          <button 
+            onClick={() => handleFilterChange('status', filters.status?.[0] === 'pending' ? '' : 'pending')}
+            className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              filters.status?.[0] === 'pending'
+                ? 'bg-yellow-100 text-yellow-800 border-yellow-300 font-semibold shadow-sm'
+                : 'bg-yellow-50/30 text-yellow-700 border-yellow-100/50 hover:bg-yellow-50'
+            }`}
+          >
+            ⏳ {stats.pending} Pendientes
+          </button>
+          <button 
+            onClick={() => handleFilterChange('status', filters.status?.[0] === 'contacted' ? '' : 'contacted')}
+            className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              filters.status?.[0] === 'contacted'
+                ? 'bg-blue-100 text-blue-800 border-blue-300 font-semibold shadow-sm'
+                : 'bg-blue-50/30 text-blue-700 border-blue-100/50 hover:bg-blue-50'
+            }`}
+          >
+            📞 {stats.contacted} En progreso
+          </button>
+          <button 
+            onClick={() => handleFilterChange('status', filters.status?.[0] === 'completed' ? '' : 'completed')}
+            className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              filters.status?.[0] === 'completed'
+                ? 'bg-green-100 text-green-800 border-green-300 font-semibold shadow-sm'
+                : 'bg-green-50/30 text-green-700 border-green-100/50 hover:bg-green-50'
+            }`}
+          >
+            ✓ {stats.completed} Completadas
+          </button>
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 ml-auto">
+            Total: {totalItems}
+          </span>
         </div>
       )}
 

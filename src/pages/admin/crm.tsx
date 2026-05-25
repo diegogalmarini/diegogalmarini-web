@@ -8,6 +8,7 @@ import {
   AppointmentList,
   AvailabilityManager,
   PlanManager,
+  BlogManager,
   CRMDashboard,
   Modal,
   LoadingSpinner,
@@ -20,7 +21,8 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
-  ViewColumnsIcon
+  ViewColumnsIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 import ClientDetail from '../../components/admin/crm/clients/ClientDetail';
@@ -37,7 +39,7 @@ import {
   useFollowUps
 } from '../../hooks/useCRM';
 
-type Tab = 'dashboard' | 'kanban' | 'clients' | 'consultations' | 'appointments' | 'availability' | 'plans';
+type Tab = 'dashboard' | 'kanban' | 'clients' | 'consultations' | 'appointments' | 'availability' | 'plans' | 'blog';
 
 type ModalState = {
   type: 'consultation' | 'client' | 'appointment' | 'followUp' | null;
@@ -182,6 +184,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ bypassAuth = false }) => {
     { id: 'appointments', name: 'Citas', icon: CalendarIcon },
     { id: 'availability', name: 'Disponibilidad', icon: ClockIcon },
     { id: 'plans', name: 'Planes', icon: CurrencyDollarIcon },
+    { id: 'blog', name: 'Blog IA', icon: DocumentTextIcon },
   ];
 
   const renderContent = () => {
@@ -228,6 +231,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ bypassAuth = false }) => {
         return <AvailabilityManager key={`availability-${refreshKey}`} />;
       case 'plans':
         return <PlanManager key={`plans-${refreshKey}`} />;
+      case 'blog':
+        return <BlogManager key={`blog-${refreshKey}`} />;
       default:
         return <CRMDashboard key={`dashboard-${refreshKey}`} onNavigate={(tab) => setActiveTab(tab as Tab)} />;
     }

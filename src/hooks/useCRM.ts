@@ -384,11 +384,17 @@ export const useClients = (initialFilters?: ClientFilters) => {
 // HOOK PARA GESTIÓN DE CITAS
 // ============================================================================
 
-export const useAppointments = ({ initialFilters, pagination, sort }: { initialFilters?: AppointmentFilters, pagination?: PaginationOptions, sort?: { field: keyof Appointment, direction: 'asc' | 'desc' } } = {}) => {
+export const useAppointments = (options: { initialFilters?: AppointmentFilters, pagination?: PaginationOptions, sort?: { field: keyof Appointment, direction: 'asc' | 'desc' } } = {}) => {
+  const { initialFilters, pagination, sort } = options;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<AppointmentFilters>(initialFilters || {});
+
+  // Memoize pagination to prevent infinite loops when passed as inline object literals
+  const memoizedPaginationString = useMemo(() => {
+    return pagination ? JSON.stringify(pagination) : '';
+  }, [pagination]);
 
   // Cargar citas
   const loadAppointments = useCallback(async () => {
@@ -396,7 +402,8 @@ export const useAppointments = ({ initialFilters, pagination, sort }: { initialF
     setError(null);
 
     try {
-      const result = await appointmentService.getAll(filters, pagination);
+      const currentPagination = memoizedPaginationString ? JSON.parse(memoizedPaginationString) : undefined;
+      const result = await appointmentService.getAll(filters, currentPagination);
 
       if (result.success) {
         setAppointments(result.data!.data);
@@ -408,7 +415,7 @@ export const useAppointments = ({ initialFilters, pagination, sort }: { initialF
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination]);
+  }, [filters, memoizedPaginationString]);
 
   // Crear nueva cita
   const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt' | 'reminderSent' | 'followUpRequired'>) => {

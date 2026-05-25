@@ -663,7 +663,7 @@ export const appointmentService = {
   // Obtener citas con filtros
   async getAll(filters?: AppointmentFilters, pagination?: PaginationOptions): Promise<ApiResponse<PaginatedResponse<Appointment>>> {
     try {
-      const constraints: QueryConstraint[] = [orderBy('date', 'desc'), orderBy('startTime', 'desc')];
+      const constraints: QueryConstraint[] = [];
 
       // Aplicar filtros
       if (filters?.status && filters.status.length > 0) {
@@ -685,10 +685,6 @@ export const appointmentService = {
         );
       }
 
-      if (pagination?.limit) {
-        constraints.push(limit(pagination.limit));
-      }
-
       const q = query(collection(db, COLLECTIONS.APPOINTMENTS), ...constraints);
       const querySnapshot = await getDocs(q);
 
@@ -702,26 +698,40 @@ export const appointmentService = {
         } as Appointment;
       });
 
+      // Ordenar en memoria por fecha desc y hora desc (evita error de índice compuesto)
+      const sortedAppointments = appointments.sort((a, b) => {
+        if (a.date !== b.date) {
+          return b.date.localeCompare(a.date);
+        }
+        return b.startTime.localeCompare(a.startTime);
+      });
+
       // Filtro de búsqueda por texto
-      let filteredAppointments = appointments;
+      let filteredAppointments = sortedAppointments;
       if (filters?.searchTerm) {
         const searchTerm = filters.searchTerm.toLowerCase();
-        filteredAppointments = appointments.filter(appointment =>
+        filteredAppointments = sortedAppointments.filter(appointment =>
           appointment.clientName.toLowerCase().includes(searchTerm) ||
           appointment.clientEmail.toLowerCase().includes(searchTerm) ||
           (appointment.notes && appointment.notes.toLowerCase().includes(searchTerm))
         );
       }
 
+      // Paginación en memoria
+      const page = pagination?.page || 1;
+      const limitVal = pagination?.limit || filteredAppointments.length;
+      const startIndex = (page - 1) * limitVal;
+      const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + limitVal);
+
       const paginatedResponse: PaginatedResponse<Appointment> = {
-        data: filteredAppointments,
+        data: paginatedAppointments,
         pagination: {
-          currentPage: pagination?.page || 1,
-          totalPages: 1,
+          currentPage: page,
+          totalPages: Math.ceil(filteredAppointments.length / limitVal) || 1,
           totalItems: filteredAppointments.length,
-          itemsPerPage: pagination?.limit || filteredAppointments.length,
-          hasNextPage: false,
-          hasPreviousPage: false
+          itemsPerPage: limitVal,
+          hasNextPage: startIndex + limitVal < filteredAppointments.length,
+          hasPreviousPage: page > 1
         }
       };
 

@@ -23,6 +23,7 @@ import { FirestoreErrorProvider } from './contexts/FirestoreErrorContext';
 import AuthDebugInfo from './components/AuthDebugInfo';
 import AdminAccessPage from './pages/AdminAccessPage';
 import DirectAdminAccess from './pages/DirectAdminAccess';
+import WhatsAppClone from './components/chat/WhatsAppClone';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -104,6 +105,7 @@ const AppContent: React.FC = () => {
       <AuthDebugInfo />
       <BookingModal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal} preselectedPlanId={selectedPlanId} prefilledNotes={prefilledNotes} />
       <LoginModal isOpen={isLoginModalOpen} onClose={handleCloseLoginModal} />
+      <WhatsAppClone onBookCall={handleOpenBookingModal} />
     </>
   );
 };

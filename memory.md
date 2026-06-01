@@ -34,6 +34,12 @@ Este archivo es la memoria persistente del sistema. Aquí se registran los retos
 *   **Solución**: Se exportaron y definieron de forma limpia ambos diccionarios en `src/constants.tsx`.
 *   **Gotcha**: Antes de dar por terminada una tarea que involucre archivos bilingües, ejecuta de forma mandatoria un build de producción (`npm run build`) para verificar que no existan variables sin exportar.
 
+### 6. Desfase de Días de la Semana en Calendarios del CRM (BUG Resuelto)
+*   **Problema**: En las vistas mensuales de citas y consultas, el día 1 de cada mes se colocaba siempre en la primera columna (Domingo), desalineando los días siguientes de la semana (ej. el lunes 1 de junio aparecía como domingo 1).
+*   **Causa**: El mapeo de celdas de cuadrícula usaba únicamente la lista plana de fechas del mes (`eachDayOfInterval` entre el primer y último día del mes) sin rellenar la primera y última semana con los días circundantes de los meses anterior y siguiente.
+*   **Solución**: Se integró `startOfWeek` y `endOfWeek` de `date-fns` en `Calendar.tsx` y `ConsultationCalendarView.tsx` para calcular las fechas del intervalo en base a semanas completas (comenzando en Domingo 0).
+*   **Gotcha**: Al renderizar calendarios en React con rejillas de columnas CSS de 7 días, siempre inicia el intervalo en el primer día de la semana correspondiente al inicio del mes, rellenando con los días del mes anterior y opacándolos.
+
 ---
 
 ## 📈 Historial de Evolución Arquitectónica

@@ -77,6 +77,8 @@ export interface Appointment {
   planType: PlanType;
   paymentStatus: PaymentStatus;
   customPrice?: number;
+  paymentLink?: string;
+  paymentLinkSent?: boolean;
   status: AppointmentStatus;
   location?: string;
   meetingLink?: string;
@@ -332,6 +334,8 @@ export interface AppointmentFormData {
   meetingLink?: string | null;
   notes?: string | null;
   reminderMinutes?: number | null;
+  paymentLink?: string | null;
+  paymentLinkSent?: boolean | null;
 }
 
 export interface AvailabilityForm {
@@ -361,6 +365,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  rawError?: any;
 }
 
 // Tipos para paginación
@@ -472,13 +477,17 @@ export interface AppointmentReminder {
 export interface Plan {
   id: string;
   name: string;
+  nameEn?: string;
   description: string;
+  descriptionEn?: string;
   price: number;
   duration: number; // en minutos
   features: string[];
+  featuresEn?: string[];
   isActive: boolean;
   maxConsultations?: number;
   supportLevel?: 'basic' | 'standard' | 'premium';
+  paymentLink?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -486,13 +495,17 @@ export interface Plan {
 export interface BlogPost {
   id: string;
   title: string;
+  titleEn?: string;
   slug: string;
   excerpt: string;
+  excerptEn?: string;
   content: string;
+  contentEn?: string;
   publishedAt: string;
   author: string;
   readTime: string;
   category: string;
+  categoryEn?: string;
   tags: string[];
   imageUrl?: string;
   isActive: boolean;

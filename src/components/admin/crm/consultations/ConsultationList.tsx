@@ -19,7 +19,7 @@ import { useConsultations } from '../../../../hooks/useCRM';
 import Table from '../ui/Table';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormField';
-import Badge, { StatusBadge, PriorityBadge, PlanTypeBadge } from '../ui/Badge';
+import Badge, { StatusBadge, PriorityBadge, PlanTypeBadge, PaymentStatusBadge } from '../ui/Badge';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import Alert from '../ui/Alert';
 import Modal from '../ui/Modal';
@@ -201,12 +201,19 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
   const columns = useMemo(() => [
     {
       key: 'subject',
-      header: 'Asunto',
+      header: 'Asunto / Cliente',
       sortable: true,
       render: (value: any, consultation: Consultation) => (
         <div className="max-w-xs">
-          <p className="font-medium text-gray-900 truncate">{consultation?.subject || 'Sin asunto'}</p>
-          <p className="text-sm text-gray-500 truncate">{consultation?.clientEmail || ''}</p>
+          <p className="font-semibold text-gray-950 truncate" title={consultation?.subject}>{consultation?.subject || 'Sin asunto'}</p>
+          <div className="mt-1 flex flex-col gap-0.5">
+            <span className="text-xs font-semibold text-gray-700 truncate" title={consultation?.clientName}>
+              👤 {consultation?.clientName || 'Cliente sin nombre'}
+            </span>
+            <span className="text-[11px] text-gray-400 truncate" title={consultation?.clientEmail}>
+              📧 {consultation?.clientEmail || ''}
+            </span>
+          </div>
         </div>
       )
     },
@@ -215,6 +222,13 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
       header: 'Plan',
       render: (value: any, consultation: Consultation) => (
         <PlanTypeBadge planType={consultation?.planType} />
+      )
+    },
+    {
+      key: 'paymentStatus',
+      header: 'Pago',
+      render: (value: any, consultation: Consultation) => (
+        <PaymentStatusBadge paymentStatus={consultation?.paymentStatus} />
       )
     },
     {
@@ -334,7 +348,7 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
                 : 'bg-yellow-50/30 text-yellow-700 border-yellow-100/50 hover:bg-yellow-50'
             }`}
           >
-            ⏳ {stats.pending} Pendientes
+            {stats.pending} Pendientes
           </button>
           <button 
             onClick={() => handleFilterChange('status', filters.status?.[0] === 'contacted' ? '' : 'contacted')}
@@ -344,7 +358,7 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
                 : 'bg-blue-50/30 text-blue-700 border-blue-100/50 hover:bg-blue-50'
             }`}
           >
-            📞 {stats.contacted} En progreso
+            {stats.contacted} En progreso
           </button>
           <button 
             onClick={() => handleFilterChange('status', filters.status?.[0] === 'completed' ? '' : 'completed')}
@@ -354,7 +368,7 @@ export const ConsultationList: React.FC<ConsultationListProps> = ({
                 : 'bg-green-50/30 text-green-700 border-green-100/50 hover:bg-green-50'
             }`}
           >
-            ✓ {stats.completed} Completadas
+            {stats.completed} Completadas
           </button>
           <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 ml-auto">
             Total: {totalItems}

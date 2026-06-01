@@ -12,6 +12,36 @@ interface ConsultationFormProps {
   onCancel: () => void;
 }
 
+// Helper robusto para formatear fechas al formato datetime-local (YYYY-MM-DDTHH:mm)
+const formatForDatetimeLocal = (dateVal: any): string => {
+  if (!dateVal) return '';
+  let d: Date;
+  if (dateVal instanceof Date) {
+    d = dateVal;
+  } else if (typeof dateVal === 'object') {
+    if (typeof dateVal.toDate === 'function') {
+      try {
+        d = dateVal.toDate();
+      } catch (e) {
+        d = new Date();
+      }
+    } else if (dateVal.seconds !== undefined) {
+      d = new Date(dateVal.seconds * 1000);
+    } else if (dateVal._seconds !== undefined) {
+      d = new Date(dateVal._seconds * 1000);
+    } else {
+      d = new Date(dateVal);
+    }
+  } else {
+    d = new Date(dateVal);
+  }
+  
+  if (isNaN(d.getTime())) return '';
+  
+  const pad = (num: number) => String(num).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 const ConsultationForm: React.FC<ConsultationFormProps> = ({
   mode,
   consultation,
@@ -29,7 +59,8 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
     planType: consultation?.planType || 'mail',
     priority: consultation?.priority || 'medium',
     source: consultation?.source || 'website',
-    notes: consultation?.notes || ''
+    notes: (consultation?.notes && consultation?.notes.trim() !== consultation?.message?.trim()) ? consultation.notes : '',
+    startTime: consultation?.startTime ? formatForDatetimeLocal(consultation.startTime) : ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -112,8 +143,10 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
   const handleSave = () => {
     if (!validateForm()) return;
 
+    const startTimeISO = formData.startTime ? new Date(formData.startTime).toISOString() : null;
     const consultationData: Partial<Consultation> = {
       ...formData,
+      startTime: startTimeISO as any,
       status: mode === 'create' ? 'pending' : consultation?.status,
       paymentStatus: formData.planType === 'mail' ? 'free' : 'pending',
       createdAt: mode === 'create' ? new Date().toISOString() : consultation?.createdAt,
@@ -231,6 +264,23 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
                 { value: 'medium', label: 'Media' },
                 { value: 'high', label: 'Alta' }
               ]}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Horario de la Consulta */}
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Preferencias de Horario</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha y Hora de la Consulta
+            </label>
+            <Input
+              type="datetime-local"
+              value={formData.startTime}
+              onChange={(e) => handleInputChange('startTime', e.target.value)}
             />
           </div>
         </div>

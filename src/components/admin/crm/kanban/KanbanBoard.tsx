@@ -1,9 +1,9 @@
 // Componente de Tablero Kanban para gestión de Leads (Consultas) y Tareas (Seguimientos)
 // Soporta cambio dinámico de estado con Firestore y diseño responsivo premium
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { Consultation, FollowUp, ConsultationStatus, FollowUpStatus } from '../../../../types/crm';
-import { useConsultations, useFollowUps } from '../../../../hooks/useCRM';
+import { useConsultations, useFollowUps, useClients } from '../../../../hooks/useCRM';
 import Badge, { StatusBadge, PriorityBadge, PlanTypeBadge } from '../ui/Badge';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -35,19 +35,19 @@ type BoardMode = 'leads' | 'tasks';
 
 // Definición de columnas para Leads (Consultas)
 const LEAD_COLUMNS = [
-  { id: 'pending' as ConsultationStatus, name: 'Pendientes 📥', color: 'border-t-amber-500 bg-amber-50/30' },
-  { id: 'contacted' as ConsultationStatus, name: 'Contactados 💬', color: 'border-t-blue-500 bg-blue-50/30' },
-  { id: 'scheduled' as ConsultationStatus, name: 'Programados 📅', color: 'border-t-purple-500 bg-purple-50/30' },
-  { id: 'completed' as ConsultationStatus, name: 'Completados ✅', color: 'border-t-green-500 bg-green-50/30' },
-  { id: 'cancelled' as ConsultationStatus, name: 'Cancelados ❌', color: 'border-t-gray-400 bg-gray-50/30' }
+  { id: 'pending' as ConsultationStatus, name: 'Pendientes', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'contacted' as ConsultationStatus, name: 'Contactados', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'scheduled' as ConsultationStatus, name: 'Programados', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'completed' as ConsultationStatus, name: 'Completados', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'cancelled' as ConsultationStatus, name: 'Cancelados', color: 'border-t-gray-300 bg-gray-50/40' }
 ];
 
 // Definición de columnas para Tareas de Seguimiento
 const TASK_COLUMNS = [
-  { id: 'pending' as FollowUpStatus, name: 'Por hacer 📋', color: 'border-t-amber-500 bg-amber-50/30' },
-  { id: 'in_progress' as FollowUpStatus, name: 'En proceso ⚡', color: 'border-t-blue-500 bg-blue-50/30' },
-  { id: 'completed' as FollowUpStatus, name: 'Completadas ✅', color: 'border-t-green-500 bg-green-50/30' },
-  { id: 'cancelled' as FollowUpStatus, name: 'Canceladas ❌', color: 'border-t-gray-400 bg-gray-50/30' }
+  { id: 'pending' as FollowUpStatus, name: 'Por hacer', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'in_progress' as FollowUpStatus, name: 'En proceso', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'completed' as FollowUpStatus, name: 'Completadas', color: 'border-t-gray-300 bg-gray-50/40' },
+  { id: 'cancelled' as FollowUpStatus, name: 'Canceladas', color: 'border-t-gray-300 bg-gray-50/40' }
 ];
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -57,6 +57,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   className = ''
 }) => {
   const [boardMode, setBoardMode] = useState<BoardMode>('leads');
+
+  // Drag and Drop active states
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [draggedItemType, setDraggedItemType] = useState<BoardMode | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
   // Hooks de datos
   const {
@@ -75,6 +80,73 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     completeFollowUp,
     loadFollowUps
   } = useFollowUps();
+
+  const { clients } = useClients();
+
+  // Diccionario de búsqueda de nombres de clientes
+  const clientNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (clients && Array.isArray(clients)) {
+      clients.forEach(client => {
+        if (client.id && client.name) {
+          map[client.id] = client.name;
+        }
+      });
+    }
+    return map;
+  }, [clients]);
+
+  // Manejadores de Drag and Drop
+  const handleDragStart = useCallback((e: React.DragEvent, id: string, type: BoardMode) => {
+    setDraggedItemId(id);
+    setDraggedItemType(type);
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedItemId(null);
+    setDraggedItemType(null);
+    setDragOverColumnId(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    setDragOverColumnId(columnId);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    const id = draggedItemId || e.dataTransfer.getData('text/plain');
+    const type = draggedItemType;
+
+    setDragOverColumnId(null);
+    setDraggedItemId(null);
+    setDraggedItemType(null);
+
+    if (!id || !type) return;
+
+    if (type === 'leads') {
+      const lead = consultations.find(c => c.id === id);
+      if (lead && lead.status !== columnId) {
+        console.log(`🚀 Kanban DND: Moviendo consulta ${id} de ${lead.status} a ${columnId}`);
+        await updateConsultation(id, { status: columnId as ConsultationStatus });
+        await loadConsultations();
+      }
+    } else if (type === 'tasks') {
+      const task = followUps.find(f => f.id === id);
+      const currentStatus = task?.status === 'overdue' ? 'pending' : task?.status;
+      if (task && currentStatus !== columnId) {
+        console.log(`🚀 Kanban DND: Moviendo tarea ${id} de ${currentStatus} a ${columnId}`);
+        if (columnId === 'completed') {
+          await completeFollowUp(id, 'Completada desde el Tablero Kanban (Drag & Drop)');
+        } else {
+          await updateFollowUp(id, { status: columnId as FollowUpStatus });
+        }
+        await loadFollowUps();
+      }
+    }
+  }, [draggedItemId, draggedItemType, consultations, followUps, updateConsultation, loadConsultations, updateFollowUp, completeFollowUp, loadFollowUps]);
 
   const isLoading = loadingLeads || loadingTasks;
   const isError = errorLeads || errorTasks;
@@ -172,7 +244,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Leads / Consultas (📥)
+            Leads / Consultas
           </button>
           <button
             onClick={() => setBoardMode('tasks')}
@@ -182,7 +254,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Tareas / Seguimientos (📋)
+            Tareas / Seguimientos
           </button>
         </div>
       </div>
@@ -208,10 +280,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           {boardMode === 'leads'
             ? LEAD_COLUMNS.map(column => {
                 const leads = groupedLeads[column.id] || [];
+                const isDragOver = dragOverColumnId === column.id;
                 return (
                   <div
                     key={column.id}
-                    className={`rounded-2xl border border-gray-200/60 p-4 min-h-[500px] flex flex-col space-y-4 shadow-sm border-t-4 ${column.color}`}
+                    onDragOver={(e) => handleDragOver(e, column.id)}
+                    onDragLeave={() => setDragOverColumnId(prev => prev === column.id ? null : prev)}
+                    onDrop={(e) => handleDrop(e, column.id)}
+                    className={`rounded-2xl border p-4 min-h-[500px] flex flex-col space-y-4 shadow-sm border-t-4 transition-all duration-200 ${
+                      isDragOver
+                        ? 'border-dashed border-blue-400 bg-blue-50/10 scale-[1.01] ring-2 ring-blue-100/50'
+                        : 'border-gray-200/60'
+                    } ${column.color}`}
                   >
                     {/* Header de columna */}
                     <div className="flex items-center justify-between border-b border-gray-200/80 pb-2">
@@ -224,80 +304,70 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     {/* Contenido / Tarjetas */}
                     <div className="flex-1 space-y-3 overflow-y-auto max-h-[600px] pr-1">
                       {leads.length > 0 ? (
-                        leads.map(lead => (
-                          <div
-                            key={lead.id}
-                            className="bg-white/80 border border-gray-200/60 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between space-y-3 relative overflow-hidden"
-                          >
-                            {/* Prioridad de borde sutil */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                              lead.priority === 'high' ? 'bg-red-500' :
-                              lead.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
-                            }`} />
+                        leads.map(lead => {
+                          const isCurrentlyDragged = draggedItemId === lead.id;
+                          return (
+                            <div
+                              key={lead.id}
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, lead.id, 'leads')}
+                              onDragEnd={handleDragEnd}
+                              className={`bg-white/80 border rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between space-y-3 relative overflow-hidden cursor-grab active:cursor-grabbing ${
+                                isCurrentlyDragged ? 'opacity-40 border-dashed border-blue-300' : 'border-gray-200/60'
+                              }`}
+                            >
+                              {/* Prioridad de borde sutil */}
+                              <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                                lead.priority === 'high' ? 'bg-red-500' :
+                                lead.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                              }`} />
 
-                            <div className="space-y-1.5 pl-1.5">
-                              <div className="flex items-center justify-between">
-                                <PlanTypeBadge planType={lead.planType} />
-                                <PriorityBadge priority={lead.priority} />
+                              <div className="space-y-1.5 pl-1.5">
+                                <div className="flex items-center justify-between">
+                                  <PlanTypeBadge planType={lead.planType} />
+                                  <PriorityBadge priority={lead.priority} />
+                                </div>
+                                <h4 className="font-semibold text-gray-900 text-sm leading-snug truncate group-hover:text-blue-600" title={lead.subject}>
+                                  {lead.subject || 'Sin asunto'}
+                                </h4>
+                                <p className="text-xs font-medium text-gray-700 truncate">
+                                  {lead.clientName}
+                                </p>
+                                <p className="text-[11px] text-gray-500 truncate">
+                                  {lead.clientEmail}
+                                </p>
+                                <div className="flex items-center space-x-1 text-[10px] text-gray-400 mt-1">
+                                  <ClockIcon className="h-3 w-3" />
+                                  <span>{formatDate(lead.createdAt)}</span>
+                                </div>
                               </div>
-                              <h4 className="font-semibold text-gray-900 text-sm leading-snug truncate group-hover:text-blue-600" title={lead.subject}>
-                                {lead.subject || 'Sin asunto'}
-                              </h4>
-                              <p className="text-xs font-medium text-gray-700 truncate">
-                                {lead.clientName}
-                              </p>
-                              <p className="text-[11px] text-gray-500 truncate">
-                                {lead.clientEmail}
-                              </p>
-                              <div className="flex items-center space-x-1 text-[10px] text-gray-400 mt-1">
-                                <ClockIcon className="h-3 w-3" />
-                                <span>{formatDate(lead.createdAt)}</span>
+
+                              {/* Controles CRUD */}
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-100 pl-1.5">
+                                <div className="flex space-x-1.5">
+                                  {onConsultationSelect && (
+                                    <button
+                                      onClick={() => onConsultationSelect(lead)}
+                                      className="p-1 rounded-md text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+                                      title="Ver detalle"
+                                    >
+                                      <EyeIcon className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  {onConsultationEdit && (
+                                    <button
+                                      onClick={() => onConsultationEdit(lead)}
+                                      className="p-1 rounded-md text-gray-500 hover:bg-gray-100 hover:text-amber-600 transition-colors"
+                                      title="Editar"
+                                    >
+                                      <PencilIcon className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-
-                            {/* Controles CRUD y Transiciones */}
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-100 pl-1.5">
-                              <div className="flex space-x-1.5">
-                                {onConsultationSelect && (
-                                  <button
-                                    onClick={() => onConsultationSelect(lead)}
-                                    className="p-1 rounded-md text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors"
-                                    title="Ver detalle"
-                                  >
-                                    <EyeIcon className="h-4 w-4" />
-                                  </button>
-                                )}
-                                {onConsultationEdit && (
-                                  <button
-                                    onClick={() => onConsultationEdit(lead)}
-                                    className="p-1 rounded-md text-gray-500 hover:bg-gray-100 hover:text-amber-600 transition-colors"
-                                    title="Editar"
-                                  >
-                                    <PencilIcon className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Flechas de movimiento */}
-                              <div className="flex space-x-1">
-                                <button
-                                  disabled={lead.status === 'pending'}
-                                  onClick={() => handleMoveLead(lead, 'left')}
-                                  className="p-1 rounded bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-500 disabled:bg-gray-50 transition-all shadow-sm"
-                                >
-                                  <ChevronLeftIcon className="h-3 w-3" />
-                                </button>
-                                <button
-                                  disabled={lead.status === 'cancelled'}
-                                  onClick={() => handleMoveLead(lead, 'right')}
-                                  className="p-1 rounded bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-500 disabled:bg-gray-50 transition-all shadow-sm"
-                                >
-                                  <ChevronRightIcon className="h-3 w-3" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-gray-200/50 rounded-xl">
                           <FolderOpenIcon className="h-8 w-8 text-gray-300 mb-2" />
@@ -310,10 +380,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               })
             : TASK_COLUMNS.map(column => {
                 const tasks = groupedTasks[column.id] || [];
+                const isDragOver = dragOverColumnId === column.id;
                 return (
                   <div
                     key={column.id}
-                    className={`rounded-2xl border border-gray-200/60 p-4 min-h-[500px] flex flex-col space-y-4 shadow-sm border-t-4 ${column.color}`}
+                    onDragOver={(e) => handleDragOver(e, column.id)}
+                    onDragLeave={() => setDragOverColumnId(prev => prev === column.id ? null : prev)}
+                    onDrop={(e) => handleDrop(e, column.id)}
+                    className={`rounded-2xl border p-4 min-h-[500px] flex flex-col space-y-4 shadow-sm border-t-4 transition-all duration-200 ${
+                      isDragOver
+                        ? 'border-dashed border-blue-400 bg-blue-50/10 scale-[1.01] ring-2 ring-blue-100/50'
+                        : 'border-gray-200/60'
+                    } ${column.color}`}
                   >
                     {/* Header de columna */}
                     <div className="flex items-center justify-between border-b border-gray-200/80 pb-2">
@@ -328,10 +406,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {tasks.length > 0 ? (
                         tasks.map(task => {
                           const isOverdue = new Date(task.dueDate) < new Date() && task.status === 'pending';
+                          const isCurrentlyDragged = draggedItemId === task.id;
+                          const clientName = clientNameMap[task.clientId];
                           return (
                             <div
                               key={task.id}
-                              className="bg-white/80 border border-gray-200/60 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between space-y-3 relative overflow-hidden"
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, task.id, 'tasks')}
+                              onDragEnd={handleDragEnd}
+                              className={`bg-white/80 border rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group flex flex-col justify-between space-y-3 relative overflow-hidden cursor-grab active:cursor-grabbing ${
+                                isCurrentlyDragged ? 'opacity-40 border-dashed border-blue-300' : 'border-gray-200/60'
+                              }`}
                             >
                               {/* Prioridad de borde sutil */}
                               <div className={`absolute left-0 top-0 bottom-0 w-1 ${
@@ -356,7 +441,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 )}
                                 <div className="flex items-center space-x-1.5 text-[11px] font-medium text-gray-600 bg-gray-50 border border-gray-150 p-1.5 rounded-lg mt-2">
                                   <UserIcon className="h-3 w-3 text-gray-400" />
-                                  <span className="truncate">Cliente ID: {task.clientId.substring(0, 8)}...</span>
+                                  <span className="truncate" title={clientName || `ID: ${task.clientId}`}>
+                                    Cliente: {clientName || `ID: ${task.clientId.substring(0, 8)}...`}
+                                  </span>
                                 </div>
                                 <div className="flex items-center space-x-1 text-[10px] mt-1">
                                   <CalendarIcon className="h-3.5 w-3.5 text-gray-400" />
@@ -366,7 +453,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 </div>
                               </div>
 
-                              {/* Controles CRUD y Transiciones */}
+                              {/* Controles CRUD */}
                               <div className="flex items-center justify-between pt-2 border-t border-gray-100 pl-1.5">
                                 <div className="flex space-x-1.5">
                                   {onFollowUpEdit && (
@@ -390,24 +477,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       <CheckCircleIcon className="h-4 w-4" />
                                     </button>
                                   )}
-                                </div>
-
-                                {/* Flechas de movimiento */}
-                                <div className="flex space-x-1">
-                                  <button
-                                    disabled={task.status === 'pending' || task.status === 'overdue'}
-                                    onClick={() => handleMoveTask(task, 'left')}
-                                    className="p-1 rounded bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-500 disabled:bg-gray-50 transition-all shadow-sm"
-                                  >
-                                    <ChevronLeftIcon className="h-3 w-3" />
-                                  </button>
-                                  <button
-                                    disabled={task.status === 'cancelled'}
-                                    onClick={() => handleMoveTask(task, 'right')}
-                                    className="p-1 rounded bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-500 disabled:bg-gray-50 transition-all shadow-sm"
-                                  >
-                                    <ChevronRightIcon className="h-3 w-3" />
-                                  </button>
                                 </div>
                               </div>
                             </div>

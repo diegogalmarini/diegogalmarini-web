@@ -11,7 +11,8 @@ import {
   XMarkIcon,
   EnvelopeIcon,
   PhoneIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import type { Consultation, CommunicationLog, MessageTemplate } from '../../../../types/crm';
 import { useCommunicationLogs, useConsultations } from '../../../../hooks/useCRM';
@@ -117,9 +118,11 @@ export const ResponseForm: React.FC<ResponseFormProps> = ({
   className = ''
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
   const [templates] = useState<MessageTemplate[]>(DEFAULT_TEMPLATES);
+  const [aiSuccess, setAiSuccess] = useState(false);
 
   const { createLog } = useCommunicationLogs();
   const { updateConsultation } = useConsultations();
@@ -140,6 +143,42 @@ export const ResponseForm: React.FC<ResponseFormProps> = ({
       templateId: ''
     }
   });
+
+  const handleAIResponseSuggestion = useCallback(() => {
+    setIsGeneratingAI(true);
+    setSubmitError(null);
+    setAiSuccess(false);
+
+    setTimeout(() => {
+      const query = (consultation.message || '').toLowerCase();
+      const clientName = consultation.clientName || 'Fundador';
+      
+      let aiSubject = '';
+      let aiBody = '';
+
+      if (query.includes('ia') || query.includes('agente') || query.includes('llm') || query.includes('clon') || query.includes('inteligencia')) {
+        aiSubject = 'Re: Consulta sobre integración de IA y Automatización Operativa';
+        aiBody = `Hola ${clientName},\n\nQué gusto saludarte. He leído tu consulta acerca de la integración de inteligencia artificial y agentes autónomos.\n\nComo habrás visto en la conversación con mi clon digital, la implementación de modelos de lenguaje (LLMs) y arquitecturas avanzadas como RAG (para bases de conocimiento) o flujos automatizados de datos en servidores dedicados permite optimizar de forma drástica las operaciones cotidianas y reducir los costos de infraestructura.\n\nPara poder ofrecerte un mapa de ruta técnico adaptado a tu modelo de negocio, me encantaría coordinar una llamada estratégica de 30 minutos sin costo para auditar tu caso.\n\n¿Te vendría bien agendar una videollamada esta semana? Puedes revisar mi agenda de disponibilidad en cualquier momento.\n\nUn cordial saludo,\nDiego Galmarini\nFractional CTIO`;
+      } else if (query.includes('arquitectura') || query.includes('software') || query.includes('escalar') || query.includes('serverless') || query.includes('desarrollo') || query.includes('código') || query.includes('monolito')) {
+        aiSubject = 'Re: Consulta sobre Arquitectura de Software y Escalabilidad de Infraestructura';
+        aiBody = `Hola ${clientName},\n\nGracias por escribirme. He analizado tu consulta sobre arquitectura de software y escalabilidad.\n\nDiseñar una infraestructura limpia y modular (ya sea Serverless o microservicios optimizados para contenedores) es un paso crucial para recortar costos de nube (a menudo hasta en un 40%) y evitar costosas y dolorosas refactorizaciones en fases de growth.\n\nMe gustaría realizar una auditoría rápida sin cargo de tu arquitectura actual o de la idea de tu MVP para darte una recomendación técnica sólida y precisa.\n\n¿Qué te parece si coordinamos una sesión de 30 minutos esta semana?\n\nUn abrazo,\nDiego Galmarini\nFractional CTIO`;
+      } else if (query.includes('cto') || query.includes('ctio') || query.includes('fraccional') || query.includes('asesoría') || query.includes('consultoría') || query.includes('mentor') || query.includes('liderazgo')) {
+        aiSubject = 'Re: Asesoría Estratégica de Liderazgo Tecnológico (CTIO Fraccional)';
+        aiBody = `Hola ${clientName},\n\nUn placer saludarte. He leído con mucho interés tu consulta sobre mis servicios de CTIO Fraccional.\n\nEste modelo está diseñado precisamente para proporcionar liderazgo tecnológico estratégico de alto nivel (como definir stacks sostenibles, liderar auditorías DevOps, planificar la integración de IA o estructurar equipos de ingeniería de alto rendimiento) sin incurrir en el costo financiero de contratar un perfil ejecutivo a tiempo completo.\n\nCreo que lo ideal para tu caso es que tengamos una breve videollamada introductoria de 30 minutos para alinear metas y ver si puedo aportarte valor de forma inmediata.\n\n¿Tienes disponibilidad esta semana para reunirnos?\n\nSaludos cordiales,\nDiego Galmarini\nFractional CTIO`;
+      } else if (query.includes('ads') || query.includes('analytics') || query.includes('console') || query.includes('marketing') || query.includes('lead') || query.includes('tracking') || query.includes('growth')) {
+        aiSubject = 'Re: Optimización de Tracking Avanzado e Integración de Analytics/CRM';
+        aiBody = `Hola ${clientName},\n\nQué tal. He revisado tu consulta sobre analítica, tracking de conversiones y Search Console.\n\nLa base absoluta de una buena estrategia de captación es contar con una infraestructura de tracking técnico de alta precisión. No solo se trata de configurar Google Ads y Analytics 4, sino de automatizar y sincronizar cada evento y conversión directamente con tu base de datos y tu CRM en tiempo real.\n\nPara profundizar en tu infraestructura de growth y asegurarnos de que estás midiendo tu ROI técnico al 100%, te propongo agendar una sesión Meet estratégica de 30 minutos.\n\n¿Coordinamos una videollamada para esta semana?\n\nUn saludo,\nDiego Galmarini\nFractional CTIO`;
+      } else {
+        aiSubject = 'Re: Asunto: Consulta Técnica sobre tu Proyecto';
+        aiBody = `Hola ${clientName},\n\nUn gusto saludarte. He leído atentamente tu consulta técnica.\n\nEste tipo de desafíos técnicos en integraciones de sistemas, optimización de flujos de base de datos o automatización de procesos son precisamente los retos que me encanta auditar y resolver en mis sesiones estratégicas y mentorías bajo demanda.\n\nPara darte una respuesta 100% precisa y trazar la mejor estrategia para tu modelo de negocio, me gustaría invitarte a agendar una videollamada corta de 30 minutos.\n\n¿Tienes disponibilidad esta semana? Puedes revisar mis horarios disponibles en la agenda.\n\nUn cordial saludo,\nDiego Galmarini\nFractional CTIO`;
+      }
+
+      setValue('subject', aiSubject);
+      setValue('content', aiBody);
+      setIsGeneratingAI(false);
+      setAiSuccess(true);
+    }, 600);
+  }, [consultation, setValue]);
 
   const watchedType = watch('type');
   const watchedTemplateId = watch('templateId');
@@ -186,6 +225,7 @@ export const ResponseForm: React.FC<ResponseFormProps> = ({
         templateId: ''
       });
       setSubmitError(null);
+      setAiSuccess(false);
     }
   }, [isOpen, consultation.subject, reset]);
 
@@ -342,26 +382,46 @@ export const ResponseForm: React.FC<ResponseFormProps> = ({
         </div>
 
         {/* Plantilla */}
-        <div>
-          <Controller
-            name="templateId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                label="Plantilla (opcional)"
-                placeholder="Seleccionar plantilla..."
-                options={[
-                  { value: '', label: 'Sin plantilla' },
-                  ...templates.map(template => ({
-                    value: template.id,
-                    label: template.name
-                  }))
-                ]}
-              />
-            )}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
+          <div className="flex-1">
+            <Controller
+              name="templateId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  label="Plantilla (opcional)"
+                  placeholder="Seleccionar plantilla..."
+                  options={[
+                    { value: '', label: 'Sin plantilla' },
+                    ...templates.map(template => ({
+                      value: template.id,
+                      label: template.name
+                    }))
+                  ]}
+                />
+              )}
+            />
+          </div>
+          <div className="shrink-0 mb-1">
+            <button
+              type="button"
+              onClick={handleAIResponseSuggestion}
+              disabled={isGeneratingAI}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm border-0 cursor-pointer transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-50"
+              title="Generar borrador de respuesta técnica usando tu clon digital"
+            >
+              <SparklesIcon className="h-4 w-4" />
+              {isGeneratingAI ? 'Generando...' : 'Sugerencia Clon IA'}
+            </button>
+          </div>
         </div>
+
+        {aiSuccess && (
+          <div className="text-xs text-blue-650 bg-blue-50 p-2.5 rounded-xl border border-blue-100">
+            ✨ Borrador autocompletado en voz de tu Clon Digital. ¡Revísalo antes de enviar!
+          </div>
+        )}
 
         {/* Asunto */}
         <div>

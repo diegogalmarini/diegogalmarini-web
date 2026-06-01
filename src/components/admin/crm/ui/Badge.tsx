@@ -163,12 +163,12 @@ export const PlanTypeBadge: React.FC<{ planType?: string; className?: string }> 
   const getDisplayText = (planType?: string) => {
     if (!planType) return 'Sin tipo';
     const planMap: { [key: string]: string } = {
-      'mail': '📧 Gratis (Mail)',
-      '30min': '⏰ 30 minutos',
-      '60min': '⏰ 60 minutos', 
-      'custom': '🎯 Personalizada',
-      'consultation_30': '⏰ 30 minutos',
-      'consultation_60': '⏰ 60 minutos',
+      'mail': 'Gratis (Mail)',
+      '30min': '30 minutos',
+      '60min': '60 minutos', 
+      'custom': 'Personalizada',
+      'consultation_30': '30 minutos',
+      'consultation_60': '60 minutos',
       'follow_up': 'Seguimiento',
       'strategy_session': 'Sesión Estratégica'
     };
@@ -179,6 +179,43 @@ export const PlanTypeBadge: React.FC<{ planType?: string; className?: string }> 
   return (
     <Badge variant={getVariant(planType)} className={className}>
       {getDisplayText(planType)}
+    </Badge>
+  );
+};
+
+export const PaymentStatusBadge: React.FC<{ paymentStatus?: string; className?: string }> = ({ paymentStatus, className }) => {
+  const getVariant = (paymentStatus?: string) => {
+    if (!paymentStatus) return 'default';
+    switch (paymentStatus.toLowerCase()) {
+      case 'paid':
+      case 'pagado':
+        return 'success';
+      case 'pending':
+      case 'pendiente':
+        return 'warning';
+      case 'free':
+      case 'gratis':
+      case 'gratuito':
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
+
+  const getDisplayText = (paymentStatus?: string) => {
+    if (!paymentStatus) return 'Pendiente';
+    const paymentMap: { [key: string]: string } = {
+      'paid': 'Pagado',
+      'pending': 'Pendiente',
+      'free': 'Gratuito'
+    };
+
+    return paymentMap[paymentStatus.toLowerCase()] || paymentStatus;
+  };
+
+  return (
+    <Badge variant={getVariant(paymentStatus)} className={className}>
+      {getDisplayText(paymentStatus)}
     </Badge>
   );
 };

@@ -20,10 +20,10 @@ import BlogPostPage from './pages/BlogPostPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import { FirestoreErrorProvider } from './contexts/FirestoreErrorContext';
-import AuthDebugInfo from './components/AuthDebugInfo';
 import AdminAccessPage from './pages/AdminAccessPage';
 import DirectAdminAccess from './pages/DirectAdminAccess';
 import WhatsAppClone from './components/chat/WhatsAppClone';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -43,6 +43,23 @@ const AppContent: React.FC = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { language, setLanguage } = useLanguage();
+
+  // Keep language context synchronized with URL path prefixes
+  React.useEffect(() => {
+    const path = location.pathname;
+    if (path === '/en' || path.startsWith('/en/')) {
+      if (language !== 'en') {
+        setLanguage('en');
+      }
+    } else {
+      // Do not sync admin/CRM paths since they shouldn't trigger language toggle
+      const isAdminPath = path.startsWith('/admin') || path === '/paneldecontrol' || path === '/micrm';
+      if (!isAdminPath && language !== 'es') {
+        setLanguage('es');
+      }
+    }
+  }, [location.pathname, language, setLanguage]);
 
   // Debug: ver qué ruta está recibiendo React Router
   console.log('Current location:', location.pathname, location);
@@ -85,7 +102,9 @@ const AppContent: React.FC = () => {
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/paneldecontrol" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><CRMPage /></Layout>} />
+        <Route path="/paneldecontrol" element={<CRMPage />} />
+        
+        {/* Spanish Routes (Default) */}
         <Route path="/" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><HomePage onBookCallClick={handleOpenBookingModal} /></Layout>} />
         <Route path="/services" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><ServicesPage /></Layout>} />
         <Route path="/portfolio" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PortfolioPage /></Layout>} />
@@ -95,14 +114,28 @@ const AppContent: React.FC = () => {
         <Route path="/dashboard-legacy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><DashboardPage /></Layout>} />
         <Route path="/login" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><LoginPage /></Layout>} />
         <Route path="/admin-access" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><AdminAccessPage /></Layout>} />
-        <Route path="/micrm" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><DirectAdminAccess /></Layout>} />
-        <Route path="/admin/crm" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><CRMPage /></Layout>} />
+        <Route path="/micrm" element={<DirectAdminAccess />} />
+        <Route path="/admin/crm" element={<CRMPage />} />
         <Route path="/blog" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPage /></Layout>} />
         <Route path="/blog/:slug" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPostPage /></Layout>} />
         <Route path="/terms-of-service" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><TermsOfServicePage /></Layout>} />
         <Route path="/privacy-policy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PrivacyPolicyPage /></Layout>} />
+
+        {/* English Routes */}
+        <Route path="/en" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><HomePage onBookCallClick={handleOpenBookingModal} /></Layout>} />
+        <Route path="/en/services" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><ServicesPage /></Layout>} />
+        <Route path="/en/portfolio" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PortfolioPage /></Layout>} />
+        <Route path="/en/portfolio/:id" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PortfolioDetailPage onBookCallClick={handleOpenBookingModal} /></Layout>} />
+        <Route path="/en/about" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><AboutPage /></Layout>} />
+        <Route path="/en/dashboard" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><ClientDashboardPage /></Layout>} />
+        <Route path="/en/dashboard-legacy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><DashboardPage /></Layout>} />
+        <Route path="/en/login" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><LoginPage /></Layout>} />
+        <Route path="/en/admin-access" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><AdminAccessPage /></Layout>} />
+        <Route path="/en/blog" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPage /></Layout>} />
+        <Route path="/en/blog/:slug" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPostPage /></Layout>} />
+        <Route path="/en/terms-of-service" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><TermsOfServicePage /></Layout>} />
+        <Route path="/en/privacy-policy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PrivacyPolicyPage /></Layout>} />
       </Routes>
-      <AuthDebugInfo />
       <BookingModal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal} preselectedPlanId={selectedPlanId} prefilledNotes={prefilledNotes} />
       <LoginModal isOpen={isLoginModalOpen} onClose={handleCloseLoginModal} />
       <WhatsAppClone onBookCall={handleOpenBookingModal} />
@@ -119,13 +152,15 @@ const App: React.FC = () => {
         v7_relativeSplatPath: true
       }}
     >
-      <AuthProvider>
-        <PlansProvider>
-          <FirestoreErrorProvider>
-            <AppContent />
-          </FirestoreErrorProvider>
-        </PlansProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <PlansProvider>
+            <FirestoreErrorProvider>
+              <AppContent />
+            </FirestoreErrorProvider>
+          </PlansProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 };

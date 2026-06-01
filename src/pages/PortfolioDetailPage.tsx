@@ -2,13 +2,24 @@ import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { detailedCaseStudies } from '../constants';
 import { Card, BarChart } from '../components/common';
-import { IoArrowBack, IoFlameOutline, IoLeafOutline, IoFlashOutline, IoCalculatorOutline, IoCalendarOutline } from 'react-icons/io5';
+import { 
+  IoArrowBack, 
+  IoLeafOutline, 
+  IoFlashOutline, 
+  IoCalculatorOutline, 
+  IoCalendarOutline 
+} from 'react-icons/io5';
+import { useLanguage } from '../contexts/LanguageContext';
+import { portfolioDetailTranslations } from '../utils/portfolioTranslations';
 
 interface PortfolioDetailPageProps {
   onBookCallClick?: (planId?: string, notes?: string) => void;
 }
 
-const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: any, annualSavings: number, co2Reduction: number) => void }> = ({ onBook }) => {
+const CTOCalculator: React.FC<{ 
+  onBook: (kwh: number, cost: number, appliances: any, annualSavings: number, co2Reduction: number) => void;
+  language: string;
+}> = ({ onBook, language }) => {
   const [kwh, setKwh] = useState(550);
   const [cost, setCost] = useState(0.24);
   const [appliances, setAppliances] = useState({
@@ -25,7 +36,7 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
   const monthlyCost = useMemo(() => kwh * cost, [kwh, cost]);
 
   const savingPercentage = useMemo(() => {
-    let pct = 8; // Ahorro base por monitoreo inteligente
+    let pct = 8; // Base smart-monitoring saving
     if (appliances.heater) pct += 8;
     if (appliances.ac) pct += 10;
     if (appliances.washer) pct += 4;
@@ -36,7 +47,7 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
   const monthlySavings = useMemo(() => (monthlyCost * savingPercentage) / 100, [monthlyCost, savingPercentage]);
   const annualSavings = useMemo(() => monthlySavings * 12, [monthlySavings]);
   const kwhSavedAnnual = useMemo(() => (kwh * savingPercentage / 100) * 12, [kwh, savingPercentage]);
-  const co2Reduction = useMemo(() => kwhSavedAnnual * 0.385, [kwhSavedAnnual]); // kg de CO2 por kWh promedio
+  const co2Reduction = useMemo(() => kwhSavedAnnual * 0.385, [kwhSavedAnnual]); // kg of CO2 per kWh average
 
   return (
     <div className="bg-[var(--card-bg)] rounded-3xl border border-[var(--border-color)] p-6 md:p-8 backdrop-blur-md shadow-xl transition-all duration-300">
@@ -45,18 +56,24 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
           <IoCalculatorOutline className="text-2xl" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-[var(--text-color)]">Simulador de Ahorro: Calculadora del CTIO</h3>
-          <p className="text-xs text-[var(--text-muted)] font-light mt-0.5">Calcula el impacto de optimización energética mediante IA en tiempo real.</p>
+          <h3 className="text-xl font-bold text-[var(--text-color)]">
+            {language === 'en' ? 'Savings Simulator: CTIO Calculator' : 'Simulador de Ahorro: Calculadora del CTIO'}
+          </h3>
+          <p className="text-xs text-[var(--text-muted)] font-light mt-0.5">
+            {language === 'en' 
+              ? 'Calculate the impact of dynamic energy optimization with real-time AI.' 
+              : 'Calcula el impacto de optimización energética mediante IA en tiempo real.'}
+          </p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 mb-8">
         {/* Sliders / Checkboxes */}
         <div className="space-y-6">
-          {/* Consumo Slider */}
+          {/* Consumption Slider */}
           <div>
             <div className="flex justify-between text-sm font-semibold text-[var(--text-color)] mb-2">
-              <span>Consumo Eléctrico Mensual</span>
+              <span>{language === 'en' ? 'Monthly Electrical Consumption' : 'Consumo Eléctrico Mensual'}</span>
               <span className="text-[var(--primary-color)] font-bold">{kwh} kWh</span>
             </div>
             <input
@@ -69,15 +86,15 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
               className="w-full h-2 bg-[var(--input-bg)] rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
             />
             <div className="flex justify-between text-[10px] text-[var(--text-muted)] mt-1 font-light">
-              <span>100 kWh (Piso)</span>
-              <span>2000 kWh (Casa Grande)</span>
+              <span>100 kWh ({language === 'en' ? 'Apartment' : 'Piso'})</span>
+              <span>2000 kWh ({language === 'en' ? 'Large House' : 'Casa Grande'})</span>
             </div>
           </div>
 
-          {/* Costo del kWh */}
+          {/* Cost per kWh */}
           <div>
             <div className="flex justify-between text-sm font-semibold text-[var(--text-color)] mb-2">
-              <span>Costo por kWh (USD)</span>
+              <span>{language === 'en' ? 'Cost per kWh (USD)' : 'Costo por kWh (USD)'}</span>
               <span className="text-[var(--primary-color)] font-bold">${cost.toFixed(2)} / kWh</span>
             </div>
             <input
@@ -90,22 +107,38 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
               className="w-full h-2 bg-[var(--input-bg)] rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
             />
             <div className="flex justify-between text-[10px] text-[var(--text-muted)] mt-1 font-light">
-              <span>$0.08 (Económico)</span>
-              <span>$0.50 (Tarifa Alta)</span>
+              <span>$0.08 ({language === 'en' ? 'Eco' : 'Económico'})</span>
+              <span>$0.50 ({language === 'en' ? 'High Rate' : 'Tarifa Alta'})</span>
             </div>
           </div>
 
-          {/* Electrodomésticos Inteligentes */}
+          {/* Smart Connected Appliances */}
           <div>
             <label className="block text-sm font-semibold text-[var(--text-color)] mb-3">
-              Electrodomésticos Inteligentes Conectados
+              {language === 'en' ? 'Smart Connected Appliances' : 'Electrodomésticos Inteligentes Conectados'}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { key: 'heater', label: 'Termoeléctrico', desc: 'Ahorro +8%' },
-                { key: 'ac', label: 'Climatización / AC', desc: 'Ahorro +10%' },
-                { key: 'washer', label: 'Lavadora / Vajilla', desc: 'Ahorro +4%' },
-                { key: 'car', label: 'Cargador EV', desc: 'Ahorro +12%' }
+                { 
+                  key: 'heater', 
+                  label: language === 'en' ? 'Water Heater' : 'Termoeléctrico', 
+                  desc: language === 'en' ? 'Savings +8%' : 'Ahorro +8%' 
+                },
+                { 
+                  key: 'ac', 
+                  label: language === 'en' ? 'Climate / AC' : 'Climatización / AC', 
+                  desc: language === 'en' ? 'Savings +10%' : 'Ahorro +10%' 
+                },
+                { 
+                  key: 'washer', 
+                  label: language === 'en' ? 'Washer / Dish' : 'Lavadora / Vajilla', 
+                  desc: language === 'en' ? 'Savings +4%' : 'Ahorro +4%' 
+                },
+                { 
+                  key: 'car', 
+                  label: language === 'en' ? 'EV Charger' : 'Cargador EV', 
+                  desc: language === 'en' ? 'Savings +12%' : 'Ahorro +12%' 
+                }
               ].map(item => {
                 const isActive = (appliances as any)[item.key];
                 return (
@@ -129,40 +162,40 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
           </div>
         </div>
 
-        {/* Resultados */}
+        {/* Results */}
         <div className="p-6 bg-[var(--input-bg)] rounded-2xl border border-[var(--border-color)] flex flex-col justify-between">
           <div className="space-y-6">
-            <h4 className="text-sm font-bold text-[var(--text-color)] border-b border-[var(--border-color)] pb-2 uppercase tracking-wider">
-              Ahorro Estimado con IA
+            <h4 className="text-xs font-bold text-[var(--text-color)] border-b border-[var(--border-color)] pb-2 uppercase tracking-wider">
+              {language === 'en' ? 'Estimated AI Savings' : 'Ahorro Estimado con IA'}
             </h4>
             
-            {/* Gasto Actual vs Nuevo */}
+            {/* Base vs New Spend */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-[var(--text-muted)] font-light">Gasto Mensual Base</p>
+                <p className="text-xs text-[var(--text-muted)] font-light">{language === 'en' ? 'Base Monthly Cost' : 'Gasto Mensual Base'}</p>
                 <p className="text-xl font-bold text-[var(--text-color)] mt-0.5">${monthlyCost.toFixed(0)} USD</p>
               </div>
               <div>
-                <p className="text-xs text-[var(--text-muted)] font-light">Porcentaje Ahorro (IA)</p>
+                <p className="text-xs text-[var(--text-muted)] font-light">{language === 'en' ? 'Savings Percentage' : 'Porcentaje Ahorro (IA)'}</p>
                 <p className="text-xl font-bold text-green-500 mt-0.5">-{savingPercentage}%</p>
               </div>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-              {/* Ahorro Anual */}
+              {/* Annual Savings */}
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm text-[var(--text-color)]">
                   <IoFlashOutline className="text-green-500 text-lg" />
-                  Ahorro Anual Estimado
+                  {language === 'en' ? 'Estimated Annual Savings' : 'Ahorro Anual Estimado'}
                 </span>
                 <span className="text-xl font-black text-green-500">${annualSavings.toFixed(0)} USD</span>
               </div>
               
-              {/* Reducción CO2 */}
+              {/* CO2 Reduction */}
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm text-[var(--text-color)]">
                   <IoLeafOutline className="text-purple-500 text-lg" />
-                  Reducción CO2 Anual
+                  {language === 'en' ? 'Annual CO2 Reduction' : 'Reducción CO2 Anual'}
                 </span>
                 <span className="text-xl font-black text-purple-500">{co2Reduction.toFixed(0)} kg</span>
               </div>
@@ -174,13 +207,15 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
             className="w-full mt-8 py-3.5 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:opacity-95 flex items-center justify-center gap-2"
           >
             <IoCalendarOutline className="text-lg" />
-            Agendar e Inyectar Simulación
+            {language === 'en' ? 'Book and Inject Simulation' : 'Agendar e Inyectar Simulación'}
           </button>
         </div>
       </div>
 
       <p className="text-[10px] text-[var(--text-muted)] text-center font-light leading-relaxed">
-        * Las estimaciones se realizan en base a modelos de tarifas dinámicas por franjas horarias y algoritmos predictivos aplicados a electrodomésticos con perfiles de consumo medio estandarizados.
+        {language === 'en' 
+          ? '* Estimates are based on dynamic rate models by hourly slots and predictive algorithms applied to appliances with standard average consumption profiles.'
+          : '* Las estimaciones se realizan en base a modelos de tarifas dinámicas por franjas horarias y algoritmos predictivos aplicados a electrodomésticos con perfiles de consumo medio estandarizados.'}
       </p>
     </div>
   );
@@ -188,18 +223,31 @@ const CTOCalculator: React.FC<{ onBook: (kwh: number, cost: number, appliances: 
 
 const PortfolioDetailPage: React.FC<PortfolioDetailPageProps> = ({ onBookCallClick }) => {
   const { id } = useParams<{ id: string }>();
-  const study = detailedCaseStudies.find(cs => cs.id === id);
+  const { language, t } = useLanguage();
+  
+  const study = useMemo(() => {
+    return detailedCaseStudies.find(cs => cs.id === id);
+  }, [id]);
 
   if (!study) {
     return (
       <div className="py-28 text-center bg-[var(--bg-color)]">
-        <h1 className="text-2xl font-bold text-[var(--text-color)]">Proyecto no encontrado</h1>
-        <Link to="/portfolio" className="text-[var(--primary-color)] hover:underline mt-4 inline-block">
-          Volver al Portafolio
+        <h1 className="text-2xl font-bold text-[var(--text-color)]">
+          {language === 'en' ? 'Project not found' : 'Proyecto no encontrado'}
+        </h1>
+        <Link to={language === 'en' ? '/en/portfolio' : '/portfolio'} className="text-[var(--primary-color)] hover:underline mt-4 inline-block">
+          {language === 'en' ? 'Back to Portfolio' : 'Volver al Portafolio'}
         </Link>
       </div>
     );
   }
+
+  const getCategoryLabel = (cat: string) => {
+    if (cat === 'Proyecto Realizado') return language === 'en' ? 'Completed Project' : 'Proyecto Realizado';
+    if (cat === 'Concepto Estratégico') return language === 'en' ? 'Strategic Concept' : 'Concepto Estratégico';
+    if (cat === 'Idea en Desarrollo') return language === 'en' ? 'Idea in Development' : 'Idea en Desarrollo';
+    return cat;
+  };
 
   const categoryColors: { [key: string]: string } = {
     'Proyecto Realizado': 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
@@ -211,99 +259,135 @@ const PortfolioDetailPage: React.FC<PortfolioDetailPageProps> = ({ onBookCallCli
     if (!onBookCallClick) return;
 
     const deviceList = [];
-    if (appliances.heater) deviceList.push('Termoeléctrico');
-    if (appliances.ac) deviceList.push('Climatización');
-    if (appliances.washer) deviceList.push('Electrodomésticos');
-    if (appliances.car) deviceList.push('Cargador EV');
+    if (appliances.heater) deviceList.push(language === 'en' ? 'Water Heater' : 'Termoeléctrico');
+    if (appliances.ac) deviceList.push(language === 'en' ? 'Climate / AC' : 'Climatización');
+    if (appliances.washer) deviceList.push(language === 'en' ? 'Appliances' : 'Electrodomésticos');
+    if (appliances.car) deviceList.push(language === 'en' ? 'EV Charger' : 'Cargador EV');
 
-    const notes = `Hola Diego, he simulado mis ahorros utilizando la Calculadora del CTO de Smart Energy Optimization. Mi hogar consume aprox. ${kwh} kWh/mes a un costo promedio de $${cost.toFixed(2)}/kWh. He seleccionado optimización para: [${deviceList.join(', ')}]. Mi ahorro anual proyectado es de $${annualSavings.toFixed(0)} USD y reducción de CO2 de ${co2Reduction.toFixed(0)} kg. Me gustaría agendar la sesión para analizar cómo estructurar este sistema IoT e IA.`;
+    const notes = language === 'en'
+      ? `Hi Diego, I have simulated my savings using the CTIO Smart Energy Optimization Calculator. My home consumes approx ${kwh} kWh/month at an average cost of $${cost.toFixed(2)}/kWh. I selected optimization for: [${deviceList.join(', ')}]. My projected annual savings is $${annualSavings.toFixed(0)} USD and CO2 reduction is ${co2Reduction.toFixed(0)} kg. I would like to schedule a session to analyze how to structure this IoT & AI system.`
+      : `Hola Diego, he simulado mis ahorros utilizando la Calculadora del CTO de Smart Energy Optimization. Mi hogar consume aprox. ${kwh} kWh/mes a un costo promedio de $${cost.toFixed(2)}/kWh. He seleccionado optimización para: [${deviceList.join(', ')}]. Mi ahorro ahorro anual proyectado es de $${annualSavings.toFixed(0)} USD y reducción de CO2 de ${co2Reduction.toFixed(0)} kg. Me gustaría agendar la sesión para analizar cómo estructurar este sistema IoT e IA.`;
     
-    // Abre el BookingModal con plan 'express' preseleccionado y las notas simuladas
     onBookCallClick('express', notes);
   };
 
+  const translated = language === 'en' && study.id ? portfolioDetailTranslations[study.id] : null;
+
+  const displayTitle = language === 'en' ? (study.titleEn || study.title) : study.title;
+  const displayProblem = translated?.problemEn || study.problem;
+  const displaySolution = translated?.solutionEn || study.solution;
+  const displayBusinessModel = translated?.businessModelEn || study.businessModel;
+  const displayTechChallenges = translated?.techChallengesEn || study.techChallenges;
+  const displayResultsSummary = translated?.summaryEn || study.results.summary;
+
+  const getMetricLabel = (label: string) => {
+    if (language === 'en' && translated?.metricsEn && translated.metricsEn[label]) {
+      return translated.metricsEn[label];
+    }
+    return label;
+  };
+
+  const getMetricValue = (value: string) => {
+    if (language === 'en' && translated?.metricsEn && translated.metricsEn[value]) {
+      return translated.metricsEn[value];
+    }
+    return value;
+  };
+
   return (
-    <div className="py-20 md:py-28 bg-[var(--bg-color)] transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-20 md:py-28 bg-[var(--bg-color)] min-h-screen transition-colors duration-300">
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/portfolio" className="inline-flex items-center text-base font-semibold text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors">
+          <Link to={language === 'en' ? '/en/portfolio' : '/portfolio'} className="inline-flex items-center text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--primary-color)] transition-colors">
             <IoArrowBack className="mr-2" />
-            Volver a todos los proyectos
+            {language === 'en' ? 'Back to all projects' : 'Volver a todos los proyectos'}
           </Link>
         </div>
 
-        <div className="relative rounded-3xl overflow-hidden mb-12 shadow-xl border border-[var(--border-color)]">
-            <img src={study.imageUrl} alt={study.title} className="w-full h-96 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 p-8 z-10">
-                <span className={`category-tag ${categoryColors[study.category]} !text-white !bg-black/40 backdrop-blur-sm !border-white/20 px-3 py-1 rounded-full text-xs font-bold border`}>
-                  {study.category}
-                </span>
-                <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mt-3">{study.title}</h1>
-            </div>
+        <div className="relative rounded-3xl overflow-hidden mb-12 shadow-xl border border-[var(--border-color)] h-96">
+          <img src={study.imageUrl} alt={displayTitle} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 p-8 z-10">
+            <span className={`category-tag ${categoryColors[study.category]} !text-white !bg-black/40 backdrop-blur-sm !border-white/20 px-3 py-1 rounded-full text-xs font-bold border`}>
+              {getCategoryLabel(study.category)}
+            </span>
+            <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight mt-3">{displayTitle}</h1>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
             <section>
-              <h2 className="text-2xl font-bold text-[var(--text-color)] mb-4">El Problema</h2>
-              <p className="text-lg text-[var(--text-muted)] leading-relaxed font-light">{study.problem}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'The Problem' : 'El Problema'}
+              </h2>
+              <p className="text-base md:text-lg text-[var(--text-muted)] leading-relaxed font-light">{displayProblem}</p>
             </section>
             
             <section>
-              <h2 className="text-2xl font-bold text-[var(--text-color)] mb-4">La Solución Propuesta</h2>
-              <p className="text-lg text-[var(--text-muted)] leading-relaxed font-light">{study.solution}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'Proposed Solution' : 'La Solución Propuesta'}
+              </h2>
+              <p className="text-base md:text-lg text-[var(--text-muted)] leading-relaxed font-light">{displaySolution}</p>
             </section>
 
             {/* Inyección de la Calculadora CTO si es Smart Energy Optimization */}
             {study.id === 'smart-energy-optimization' && (
               <section className="pt-4 border-t border-[var(--border-color)]">
-                <CTOCalculator onBook={handleSimulatedBooking} />
+                <CTOCalculator onBook={handleSimulatedBooking} language={language} />
               </section>
             )}
 
             <section>
-              <h2 className="text-2xl font-bold text-[var(--text-color)] mb-4">Modelo de Negocio</h2>
-              <p className="text-lg text-[var(--text-muted)] leading-relaxed font-light">{study.businessModel}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'Business Model' : 'Modelo de Negocio'}
+              </h2>
+              <p className="text-base md:text-lg text-[var(--text-muted)] leading-relaxed font-light">{displayBusinessModel}</p>
             </section>
             
             <section>
-              <h2 className="text-2xl font-bold text-[var(--text-color)] mb-4">Retos Técnicos</h2>
-              <p className="text-lg text-[var(--text-muted)] leading-relaxed font-light">{study.techChallenges}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'Technical Challenges' : 'Retos Técnicos'}
+              </h2>
+              <p className="text-base md:text-lg text-[var(--text-muted)] leading-relaxed font-light">{displayTechChallenges}</p>
             </section>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-8 lg:sticky top-28 self-start">
-            <Card>
-                <h3 className="text-xl font-bold text-[var(--text-color)] mb-4">Resultados Clave</h3>
-                <p className="text-base text-[var(--text-muted)] mb-6 font-light">{study.results.summary}</p>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                    {study.results.metrics.map(metric => (
-                        <div key={metric.label} className="metric-card bg-[var(--input-bg)] border border-[var(--border-color)] p-3 rounded-2xl text-center">
-                            <p className="text-2xl font-black text-[var(--primary-color)]">{metric.value}</p>
-                            <p className="text-[10px] text-[var(--text-muted)] mt-1 font-semibold uppercase tracking-wider">{metric.label}</p>
-                        </div>
-                    ))}
-                </div>
-                {study.results.chartData && (
-                  <div className="flex justify-center mt-6">
-                    <BarChart data={study.results.chartData} />
+            <Card className="rounded-3xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-md p-6">
+              <h3 className="text-lg font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'Key Results' : 'Resultados Clave'}
+              </h3>
+              <p className="text-sm text-[var(--text-muted)] mb-6 font-light">{displayResultsSummary}</p>
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {study.results.metrics.map(metric => (
+                  <div key={metric.label} className="metric-card bg-[var(--input-bg)] border border-[var(--border-color)] p-2.5 rounded-2xl text-center">
+                    <p className="text-xl font-black text-[var(--primary-color)]">{getMetricValue(metric.value)}</p>
+                    <p className="text-[9px] text-[var(--text-muted)] mt-1 font-semibold uppercase tracking-wider leading-tight">{getMetricLabel(metric.label)}</p>
                   </div>
-                )}
+                ))}
+              </div>
+              {study.results.chartData && (
+                <div className="flex justify-center mt-6">
+                  <BarChart data={study.results.chartData} />
+                </div>
+              )}
             </Card>
             
-            <Card>
-                <h3 className="text-xl font-bold text-[var(--text-color)] mb-4">Pila Tecnológica</h3>
-                <div className="flex flex-wrap gap-2.5">
-                    {study.techStack.map(tech => (
-                        <div key={tech.name} className="tech-stack-item bg-[var(--input-bg)] border border-[var(--border-color)] px-4 py-2 rounded-xl flex items-center shadow-sm">
-                            <tech.icon className="text-[var(--primary-color)] text-lg" />
-                            <span className="ml-2 text-sm text-[var(--text-color)] font-semibold">{tech.name}</span>
-                        </div>
-                    ))}
-                </div>
+            <Card className="rounded-3xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-md p-6">
+              <h3 className="text-lg font-bold text-[var(--text-color)] mb-4">
+                {language === 'en' ? 'Technology Stack' : 'Pila Tecnológica'}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {study.techStack.map(tech => (
+                  <div key={tech.name} className="tech-stack-item bg-[var(--input-bg)] border border-[var(--border-color)] px-3 py-1.5 rounded-xl flex items-center shadow-sm">
+                    <tech.icon className="text-[var(--primary-color)] text-sm" />
+                    <span className="ml-2 text-xs text-[var(--text-color)] font-semibold">{tech.name}</span>
+                  </div>
+                ))}
+              </div>
             </Card>
           </div>
         </div>

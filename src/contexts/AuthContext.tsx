@@ -69,12 +69,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('google_access_token');
       }
 
-      // Lógica temporal para pruebas - incluir emails de admin de prueba
-      const adminEmails = [
-        'diegogalmarini@gmail.com',
-        'admin@test.com',
-        'test@admin.com'
-      ];
+      // Solo diegogalmarini@gmail.com puede ser administrador en producción
+      const adminEmails = import.meta.env.DEV
+        ? ['diegogalmarini@gmail.com', 'admin@test.com', 'test@admin.com']
+        : ['diegogalmarini@gmail.com'];
 
       const isUserAdmin = currentUser?.email ? adminEmails.includes(currentUser.email.toLowerCase()) : false;
       console.log('🔍 Is admin check:', {

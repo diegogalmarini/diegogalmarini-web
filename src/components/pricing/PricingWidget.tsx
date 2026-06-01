@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePlans } from '../../contexts/PlansContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { IoCheckmarkCircleOutline, IoMailOutline, IoTimeOutline, IoChevronForward } from 'react-icons/io5';
 
 interface PricingWidgetProps {
@@ -8,6 +9,7 @@ interface PricingWidgetProps {
 
 const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
   const { plans } = usePlans();
+  const { language, t } = useLanguage();
 
   // Mostrar solo los planes activos
   const activePlans = React.useMemo(() => {
@@ -21,13 +23,13 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
         {/* Intro */}
         <div className="text-center mb-16">
           <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-[rgba(var(--primary-rgb),0.1)] text-[var(--primary-color)] border border-[rgba(var(--primary-rgb),0.2)] mb-4 inline-block">
-            Planes de Asesoría
+            {t('pricing.title')}
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-[var(--text-color)] tracking-tight">
-            Consultoría Estratégica a tu <span className="bg-gradient-to-r from-[var(--primary-color)] to-[#a855f7] bg-clip-text text-transparent">Medida</span>
+            {t('pricing.headline')}<span className="bg-gradient-to-r from-[var(--primary-color)] to-[#a855f7] bg-clip-text text-transparent">{t('pricing.headline.span')}</span>
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-[var(--text-muted)] font-light leading-relaxed">
-            Elige el formato de asesoría que mejor se adapte al momento actual de tu producto, startup o equipo de ingeniería.
+            {t('pricing.subtitle')}
           </p>
         </div>
 
@@ -36,6 +38,10 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
           {activePlans.map(plan => {
             const isFree = plan.price === 0;
             const isMostPopular = plan.id === 'express';
+            
+            const planName = language === 'en' ? (plan.nameEn || plan.name) : plan.name;
+            const planDescription = language === 'en' ? (plan.descriptionEn || plan.description) : plan.description;
+            const planFeatures = language === 'en' ? (plan.featuresEn || plan.features) : plan.features;
 
             return (
               <div 
@@ -49,24 +55,24 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
                 {/* Badge de Popular */}
                 {isMostPopular && (
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-[var(--primary-color)] text-white shadow-lg">
-                    Recomendado
+                    {t('pricing.recommended')}
                   </span>
                 )}
 
                 {/* Encabezado */}
                 <div className="p-8 pb-6 border-b border-[var(--border-color)]">
-                  <h3 className="text-xl font-bold text-[var(--text-color)] mb-2">{plan.name}</h3>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed h-12 overflow-hidden font-light">
-                    {plan.description}
+                  <h3 className="text-xl font-bold text-[var(--text-color)] mb-2">{planName}</h3>
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed min-h-[5.5rem] md:min-h-[6rem] lg:min-h-[5.5rem] font-light">
+                    {planDescription}
                   </p>
                   
                   {/* Precio */}
                   <div className="mt-6 flex items-baseline">
                     <span className="text-4xl md:text-5xl font-black text-[var(--text-color)] tracking-tight">
-                      {isFree ? 'Gratis' : `$${plan.price}`}
+                      {isFree ? (language === 'en' ? 'Free' : 'Gratis') : `${plan.price}€`}
                     </span>
                     {!isFree && (
-                      <span className="text-sm font-semibold text-[var(--text-muted)] ml-2">USD</span>
+                      <span className="text-sm font-semibold text-[var(--text-muted)] ml-2">EUR</span>
                     )}
                   </div>
 
@@ -75,12 +81,12 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
                     {plan.duration > 0 ? (
                       <>
                         <IoTimeOutline className="text-sm text-[var(--primary-color)]" />
-                        <span>{plan.duration} minutos de sesión virtual</span>
+                        <span>{plan.duration} {language === 'en' ? 'minutes virtual session' : 'minutos de sesión virtual'}</span>
                       </>
                     ) : (
                       <>
                         <IoMailOutline className="text-sm text-[var(--primary-color)]" />
-                        <span>Asesoría escrita por email</span>
+                        <span>{language === 'en' ? 'Written advisory by email' : 'Asesoría escrita por email'}</span>
                       </>
                     )}
                   </div>
@@ -89,7 +95,7 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
                 {/* Características */}
                 <div className="p-8 flex-1 flex flex-col justify-between">
                   <ul className="space-y-4 mb-8">
-                    {plan.features.map((feature, i) => (
+                    {planFeatures.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <IoCheckmarkCircleOutline className="text-lg text-[var(--primary-color)] flex-shrink-0 mt-0.5" />
                         <span className="text-sm text-[var(--text-muted)] font-light leading-relaxed">{feature}</span>
@@ -104,11 +110,11 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
                       isMostPopular
                         ? 'bg-[var(--primary-color)] text-white shadow-lg hover:shadow-xl hover:opacity-95'
                         : isFree
-                          ? 'bg-[var(--input-bg)] text-[var(--text-color)] border border-[var(--border-color)] hover:bg-[var(--border-color)]'
+                          ? 'bg-[#F26522] text-white shadow-lg hover:shadow-xl hover:opacity-95'
                           : 'bg-gradient-to-r from-[var(--primary-color)] to-[#a855f7] text-white hover:opacity-95'
                     }`}
                   >
-                    {isFree ? 'Comenzar Consulta' : 'Pagar e Iniciar'}
+                    {isFree ? t('pricing.cta.free') : t('pricing.cta.paid')}
                     <IoChevronForward className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
@@ -120,11 +126,11 @@ const PricingWidget: React.FC<PricingWidgetProps> = ({ onSelectPlan }) => {
         {/* Garantía de Stripe */}
         <div className="mt-12 text-center flex items-center justify-center gap-6 text-[var(--text-muted)] text-xs">
           <span className="flex items-center gap-1.5">
-            🔒 Pagos Seguros vía Stripe
+            {t('pricing.stripe')}
           </span>
           <span className="h-4 w-px bg-[var(--border-color)]"></span>
           <span>
-            Reserva Directa Inmediata
+            {t('pricing.direct')}
           </span>
         </div>
 

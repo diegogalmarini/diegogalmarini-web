@@ -5,8 +5,8 @@
 /* Variables CSS para temas */
 :root {
   /* Light Theme (Default) */
-  --bg-color: #f1f1f4;
-  --text-color: #1d1d1f;
+  --bg-color: #ffffff;
+  --text-color: #37383a;
   --text-muted: #6e6e73;
   --primary-color: #007aff;
   --primary-rgb: 0, 122, 255;
@@ -68,21 +68,21 @@ body {
 .nav-link-base {
   padding: 0.5rem 1.25rem;
   border-radius: 9999px;
-  transition: all 0.2s ease-in-out;
-  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link-active {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: rgba(0, 122, 255, 0.07);
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 .nav-link-inactive {
-  color: var(--text-color);
+  color: var(--text-muted);
 }
 
 .nav-link-inactive:hover {
-  background-color: var(--nav-inactive-hover-bg);
+  background-color: rgba(128, 128, 128, 0.06);
   color: var(--text-color);
 }
 
@@ -204,7 +204,7 @@ body {
   }
   
   .modal-glass-content {
-    @apply bg-[var(--card-bg)] backdrop-blur-md border border-[var(--border-color)] rounded-2xl shadow-2xl;
+    @apply bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-[var(--border-color)] rounded-2xl shadow-2xl;
   }
   
   .scrollbar-thin {
@@ -223,4 +223,59 @@ body {
   border-radius: 2rem;
   padding: 4rem;
   box-shadow: 0 10px 25px -5px var(--shadow-color);
+}
+
+/* Custom logo responsiveness for light and dark theme switching */
+.logo-light-theme {
+  display: inline-block;
+}
+.logo-dark-theme {
+  display: none;
+}
+
+html[data-theme='dark'] .logo-light-theme {
+  display: none;
+}
+html[data-theme='dark'] .logo-dark-theme {
+  display: inline-block;
+}
+
+/* Infinite horizontal scrolling marquee animations */
+@keyframes marquee-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 90s linear infinite;
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marquee-right 90s linear infinite;
+}
+
+/* Pause marquee on hover so the user can easily read or interact with a card */
+.marquee-container:hover .animate-marquee-left,
+.marquee-container:hover .animate-marquee-right {
+  animation-play-state: paused;
+}
+
+/* Glassmorphic premium card transition */
+.case-study-glass-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+}
+
+.case-study-glass-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 122, 255, 0.15);
 }

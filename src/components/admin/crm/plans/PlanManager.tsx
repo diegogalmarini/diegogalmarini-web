@@ -26,6 +26,7 @@ interface PlanFormData {
   isActive: boolean;
   maxConsultations: number;
   supportLevel: 'basic' | 'standard' | 'premium';
+  paymentLink: string;
 }
 
 const PlanManager: React.FC = () => {
@@ -43,7 +44,8 @@ const PlanManager: React.FC = () => {
     features: [],
     isActive: true,
     maxConsultations: 1,
-    supportLevel: 'basic'
+    supportLevel: 'basic',
+    paymentLink: ''
   });
 
   // Resetear formulario
@@ -56,7 +58,8 @@ const PlanManager: React.FC = () => {
       features: [],
       isActive: true,
       maxConsultations: 1,
-      supportLevel: 'basic'
+      supportLevel: 'basic',
+      paymentLink: ''
     });
   };
 
@@ -80,7 +83,8 @@ const PlanManager: React.FC = () => {
       features: plan.features || [],
       isActive: plan.isActive,
       maxConsultations: plan.maxConsultations || 1,
-      supportLevel: plan.supportLevel || 'basic'
+      supportLevel: plan.supportLevel || 'basic',
+      paymentLink: plan.paymentLink || ''
     });
     setShowModal(true);
   };
@@ -97,7 +101,8 @@ const PlanManager: React.FC = () => {
       features: plan.features || [],
       isActive: plan.isActive,
       maxConsultations: plan.maxConsultations || 1,
-      supportLevel: plan.supportLevel || 'basic'
+      supportLevel: plan.supportLevel || 'basic',
+      paymentLink: plan.paymentLink || ''
     });
     setShowModal(true);
   };
@@ -228,7 +233,7 @@ const PlanManager: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">
-                      ${plan.price}
+                      {plan.price}€
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -327,11 +332,11 @@ const PlanManager: React.FC = () => {
             />
           </div>
 
-          {/* Precio y Duración */}
+           {/* Precio y Duración */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Precio (USD)
+                Precio (EUR)
               </label>
               <Input
                 type="number"
@@ -353,6 +358,20 @@ const PlanManager: React.FC = () => {
                 disabled={modalMode === 'view'}
               />
             </div>
+          </div>
+
+          {/* Enlace de Pago Lemonsqueezy */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Enlace de Pago Lemon Squeezy (URL de Checkout)
+            </label>
+            <Input
+              type="text"
+              value={formData.paymentLink}
+              onChange={(e) => handleInputChange('paymentLink', e.target.value)}
+              placeholder="Ej: https://diegogalmarini.lemonsqueezy.com/checkout/buy/..."
+              disabled={modalMode === 'view'}
+            />
           </div>
 
           {/* Características */}
@@ -412,9 +431,6 @@ const PlanManager: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nivel de Soporte
-              </label>
               <Select
                 label="Nivel de Soporte"
                 value={formData.supportLevel}

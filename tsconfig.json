@@ -38,6 +38,7 @@
     "components/BookingModal.old.tsx",
     "functions/**",
     "scripts/**",
-    "public/**"
+    "public/**",
+    "scratch/**"
   ]
 }

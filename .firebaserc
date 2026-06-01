@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "diego-galmarini-oficial-web"
-  }
+  },
+
+  "etags": {}
 }

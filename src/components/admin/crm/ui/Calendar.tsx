@@ -108,24 +108,64 @@ export const Calendar: React.FC<CalendarProps> = ({
     return events;
   }, [appointments, consultations, blockedPeriods]);
 
+  // Helper robusto para parsear fechas de Firestore y strings ISO
+  const safeParseDate = (dateVal: any): Date => {
+    if (!dateVal) return new Date();
+    
+    // Si ya es un objeto Date
+    if (dateVal instanceof Date) return dateVal;
+    
+    // Si es un Timestamp de Firestore (tiene método toDate)
+    if (typeof dateVal.toDate === 'function') {
+      return dateVal.toDate();
+    }
+    
+    // Si tiene estructura de Timestamp de Firestore {seconds, nanoseconds}
+    if (dateVal.seconds !== undefined) {
+      return new Date(dateVal.seconds * 1000);
+    }
+    
+    // Si es un string ISO o similar
+    if (typeof dateVal === 'string') {
+      try {
+        const parsed = parseISO(dateVal);
+        // Validar si el parseo fue correcto
+        if (!isNaN(parsed.getTime())) return parsed;
+      } catch (e) {
+        // Fallback al constructor nativo
+      }
+      const nativeParsed = new Date(dateVal);
+      if (!isNaN(nativeParsed.getTime())) return nativeParsed;
+    }
+    
+    return new Date(dateVal);
+  };
+
   // Obtener eventos para una fecha específica
   const getEventsForDate = (date: Date) => {
     return calendarEvents.filter(event => {
-      if (event.type === 'appointment') {
-        const appointment = event.data as Appointment;
-        return isSameDay(parseISO(appointment.date), date);
-      } else if (event.type === 'consultation') {
-        const consultation = event.data as Consultation;
-        return isSameDay(parseISO(consultation.createdAt), date);
-      } else if (event.type === 'blocked') {
-        const period = event.data as BlockedPeriod;
-        if (!period.startDate || !period.endDate) return false;
+      try {
+        if (event.type === 'appointment') {
+          const appointment = event.data as Appointment;
+          if (!appointment.date) return false;
+          return isSameDay(safeParseDate(appointment.date), date);
+        } else if (event.type === 'consultation') {
+          const consultation = event.data as Consultation;
+          if (!consultation.createdAt) return false;
+          return isSameDay(safeParseDate(consultation.createdAt), date);
+        } else if (event.type === 'blocked') {
+          const period = event.data as BlockedPeriod;
+          if (!period.startDate || !period.endDate) return false;
 
-        const startDate = startOfDay(parseISO(period.startDate));
-        const endDate = startOfDay(parseISO(period.endDate));
-        const checkDate = startOfDay(date);
+          const startDate = startOfDay(safeParseDate(period.startDate));
+          const endDate = startOfDay(safeParseDate(period.endDate));
+          const checkDate = startOfDay(date);
 
-        return checkDate >= startDate && checkDate <= endDate;
+          return checkDate >= startDate && checkDate <= endDate;
+        }
+      } catch (error) {
+        console.error('Error parseando fecha de evento:', event, error);
+        return false;
       }
       return false;
     });

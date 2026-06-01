@@ -21,6 +21,60 @@ exports.onConsultationCreated = onDocumentCreated(
     }
     const data = snap.data();
 
+    // --- AUTOMATIZACIÓN DE CLIENTE EN FIRESTORE ---
+    const clientEmail = data.clientEmail || data.userEmail || "";
+    const clientName = data.clientName || data.userName || "Sin nombre";
+    const clientPhone = data.phone || "";
+    const clientNotes = data.notes || data.message || "";
+    const clientSource = data.source || "website";
+
+    if (clientEmail) {
+      try {
+        const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+        const adminDb = getFirestore();
+        const clientsRef = adminDb.collection("clients");
+
+        // Buscar si ya existe un cliente con este correo electrónico
+        const querySnapshot = await clientsRef.where("email", "==", clientEmail).limit(1).get();
+
+        if (querySnapshot.empty) {
+          logger.info(`El cliente con email ${clientEmail} no existe. Creando nuevo registro en 'clients'...`);
+          await clientsRef.add({
+            name: clientName,
+            email: clientEmail,
+            phone: clientPhone,
+            address: "",
+            company: "",
+            position: "",
+            status: "active",
+            tags: ["website"],
+            notes: "",
+            preferredContactMethod: "email",
+            timezone: "",
+            language: "es",
+            source: clientSource,
+            registrationDate: FieldValue.serverTimestamp(),
+            lastContactDate: FieldValue.serverTimestamp(),
+            totalConsultations: 1,
+            totalAppointments: 0,
+          });
+          logger.info(`Nuevo cliente creado exitosamente para ${clientEmail}.`);
+        } else {
+          logger.info(`El cliente con email ${clientEmail} ya existe. Actualizando estadísticas...`);
+          const clientDoc = querySnapshot.docs[0];
+          await clientDoc.ref.update({
+            totalConsultations: FieldValue.increment(1),
+            lastContactDate: FieldValue.serverTimestamp(),
+            name: clientName || clientDoc.data().name,
+            phone: clientPhone || clientDoc.data().phone,
+          });
+          logger.info(`Registro de cliente actualizado exitosamente para ${clientEmail}.`);
+        }
+      } catch (err) {
+        logger.error(`Error en la automatización del cliente para ${clientEmail}:`, err);
+      }
+    }
+
     const resendKey = process.env.RESEND_API_KEY || "";
     if (!resendKey) {
       throw new Error("Falta RESEND_API_KEY en las variables de entorno");
@@ -35,7 +89,8 @@ exports.onConsultationCreated = onDocumentCreated(
     // Preparar datos para el calendario del cliente
     const preferredDate = data.preferredDate || "";
     const preferredTime = data.preferredTime || "";
-    const clientNotes = data.notes || "";
+    // Reutilizamos clientNotes ya declarado arriba en la línea 28
+    // clientNotes = data.notes || "";
 
     // Preparar archivo ICS y enlaces de calendario
     let calendarLinks = "";
@@ -261,6 +316,98 @@ exports.onConsultationCreated = onDocumentCreated(
     } catch (error) {
       logger.error("Error al enviar correos con Resend:", error);
       return { success: false, error: error.message };
+    }
+  },
+);
+
+exports.onCommunicationLogCreated = onDocumentCreated(
+  {
+    document: "communicationLogs/{logId}",
+    secrets: ["RESEND_API_KEY"],
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) {
+      logger.log("No data associated with the event, skipping email send.");
+      return;
+    }
+    const data = snap.data();
+
+    // Solo enviar si es un email de salida (outbound)
+    if (data.type === "email" && data.direction === "outbound") {
+      const clientEmail = data.clientId; // Guardado como email en el log de comunicación
+      const subject = data.subject || "Respuesta a tu consulta - Diego Galmarini";
+      const content = data.content || "";
+
+      if (!clientEmail) {
+        logger.error("No se encontró email del cliente en el log de comunicación.");
+        return;
+      }
+
+      const resendKey = process.env.RESEND_API_KEY || "";
+      if (!resendKey) {
+        throw new Error("Falta RESEND_API_KEY en las variables de entorno");
+      }
+
+      const resend = new Resend(resendKey);
+      const fromAddress = "Diego Galmarini <hola@diegogalmarini.com>";
+
+      // Estilo elegante de correo para las respuestas directas del CRM (Coherente con el tema #37383a)
+      const htmlContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+          
+          <!-- Cabecera -->
+          <tr>
+            <td style="background-color: #37383a; padding: 24px 30px; text-align: left;">
+              <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600; letter-spacing: 0.5px;">Diego Galmarini</p>
+              <p style="margin: 2px 0 0 0; color: #9ca3af; font-size: 12px;">Socio Tecnológico Estratégico</p>
+            </td>
+          </tr>
+
+          <!-- Contenido -->
+          <tr>
+            <td style="padding: 40px 30px; color: #37383a; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">${content}</td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 30px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0; font-size: 12px; text-align: center;">
+                Has recibido este correo como parte del seguimiento de tu consulta técnica en diegogalmarini.com.
+              </p>
+              <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px; text-align: center;">
+                © ${new Date().getFullYear()} Diego Galmarini • Todos los derechos reservados
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+      try {
+        await resend.emails.send({
+          from: fromAddress,
+          to: clientEmail,
+          subject: subject,
+          html: htmlContent,
+        });
+        logger.info(`Email de respuesta enviado exitosamente a ${clientEmail} vía Resend.`);
+      } catch (error) {
+        logger.error("Error al enviar email de respuesta desde log de comunicación:", error);
+      }
     }
   },
 );

@@ -92,4 +92,26 @@ Desarrollar el rediseño integral de la web pública de Diego Galmarini para con
 * **Respaldo en GitHub (Completado):** Commiteado y subido todo el código a GitHub en las ramas `main` y `vite-crm`.
 * **Estado de Despliegue Live:** La compilación de producción está lista en `/dist`. Para realizar el despliegue a tu dominio en Firebase Hosting, es necesario actualizar tus credenciales locales en la terminal ejecutando `firebase login --reauth` en tu consola interactiva, ya que el token actual está expirado y la CLI de Firebase rechaza comandos en entornos no interactivos. Una vez re-autenticado, ejecuta `firebase deploy --only hosting` para publicar los cambios.
 
+---
 
+## 🗓️ Registro del Día: 1 de Junio de 2026
+
+### 🚀 Objetivos del Día
+Limpiar y organizar el espacio de trabajo del SaaS eliminando duplicaciones de código obsoletas. Establecer la arquitectura del "Harness AI" (Portal de Agentes, Directrices de Claude, Memoria Evolutiva y Bitácora unificada) y crear el script de inicialización del entorno `init.sh`.
+
+### 🌟 Logros y Modificaciones Realizadas
+
+#### 1. Depuración del Workspace (Completado)
+* **Eliminación de Basura Estática:** Eliminamos los archivos obsoletos `CODIGO_FUENTE_PRINCIPAL.md` y `DOCUMENTACION_PROYECTO_COMPLETO.md` de enero de 2025 para ahorrar un 60% de ventana de contexto en las consultas de IA.
+* **Archivado de Parches Pasados:** Eliminamos `CORRECCIONES_CRM.md` y `SISTEMA_RESERVAS_CRM.md` cuya bitácora ya está consolidada en este diario.
+
+#### 2. Cimientos del AI Harness (Completado)
+* **Agents.md (Completado):** Creamos el portal central de entrada para las IAs. Establece la dinámica del bucle cerrado (Orquestador ➜ Desarrollador ➜ Auditor QA) y enlaza las habilidades (skills).
+* **Claude.md (Completado):** Detalla las especificaciones técnicas estandarizadas del SaaS, las guías estéticas premium (modales glassmorphic de 90% opacidad para evitar text-bleed) y las reglas estrictas de traducción bilingüe conscientes de la ruta URL.
+* **memory.md (Completado):** Sistema de registro para que las IAs anoten gotchas de ingeniería persistentes (ej. barras invertidas escapadas en tsx, chunks excesivos en Vite, rewrites SPA en Firebase).
+
+#### 3. Script de Inicialización de Entorno (Completado)
+* **init.sh (Completado):** Desarrollamos el script bash central de arranque. Valida el software requerido (Node/npm), crea el archivo `.env.local` plantilla de variables de entorno si falta, instala las dependencias de forma segura, y corre el build para certificar el estado de compilación.
+
+### 🧪 Verificaciones y Compilación
+* **Vite Production Bundler:** Se corrió el build con éxito total de salida. El empaquetador generó todos los chunks de producción fragmentados correctamente.

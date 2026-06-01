@@ -271,10 +271,21 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
         };
         const statusLabel = paymentStatusOptions.find(option => option.value === appointment.paymentStatus)?.label || appointment.paymentStatus;
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[appointment.paymentStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
-            }`}>
-            {statusLabel}
-          </span>
+          <div className="flex flex-col space-y-1 items-start">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[appointment.paymentStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
+              }`}>
+              {statusLabel}
+            </span>
+            {appointment.paymentStatus === 'pending' && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                appointment.paymentLinkSent 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {appointment.paymentLinkSent ? '✉️ Enlace enviado' : '⏳ Sin enviar'}
+              </span>
+            )}
+          </div>
         );
       }
     },

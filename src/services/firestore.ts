@@ -700,10 +700,14 @@ export const appointmentService = {
 
       // Ordenar en memoria por fecha desc y hora desc (evita error de índice compuesto)
       const sortedAppointments = appointments.sort((a, b) => {
-        if (a.date !== b.date) {
-          return b.date.localeCompare(a.date);
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        if (dateA !== dateB) {
+          return dateB.localeCompare(dateA);
         }
-        return b.startTime.localeCompare(a.startTime);
+        const timeA = a.startTime || '';
+        const timeB = b.startTime || '';
+        return timeB.localeCompare(timeA);
       });
 
       // Filtro de búsqueda por texto
@@ -762,7 +766,11 @@ export const appointmentService = {
       });
 
       // Ordenar en memoria
-      appointments.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      appointments.sort((a, b) => {
+        const timeA = a.startTime || '';
+        const timeB = b.startTime || '';
+        return timeA.localeCompare(timeB);
+      });
 
       return { success: true, data: appointments };
     } catch (error) {
@@ -895,7 +903,7 @@ export const messageTemplateService = {
       });
 
       // Ordenar en memoria
-      templates.sort((a, b) => a.name.localeCompare(b.name));
+      templates.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       return { success: true, data: templates };
     } catch (error) {
@@ -926,7 +934,7 @@ export const messageTemplateService = {
       });
 
       // Ordenar en memoria
-      templates.sort((a, b) => a.name.localeCompare(b.name));
+      templates.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       return { success: true, data: templates };
     } catch (error) {
@@ -1511,7 +1519,7 @@ export const blogService = {
       return { success: true, data: newPost };
     } catch (error) {
       console.error('Error creating blog post:', error);
-      return { success: false, error: 'Error al crear el artículo' };
+      return { success: false, error: 'Error al crear el artículo', rawError: error };
     }
   },
 
@@ -1536,7 +1544,7 @@ export const blogService = {
       return { success: true, data: post };
     } catch (error) {
       console.error('Error getting blog post by id:', error);
-      return { success: false, error: 'Error al obtener el artículo' };
+      return { success: false, error: 'Error al obtener el artículo', rawError: error };
     }
   },
 
@@ -1567,7 +1575,7 @@ export const blogService = {
       return { success: true, data: post };
     } catch (error) {
       console.error('Error getting blog post by slug:', error);
-      return { success: false, error: 'Error al obtener el artículo' };
+      return { success: false, error: 'Error al obtener el artículo', rawError: error };
     }
   },
 
@@ -1595,7 +1603,7 @@ export const blogService = {
       return { success: true, data: posts };
     } catch (error) {
       console.error('Error getting all blog posts:', error);
-      return { success: false, error: 'Error al obtener los artículos' };
+      return { success: false, error: 'Error al obtener los artículos', rawError: error };
     }
   },
 
@@ -1617,7 +1625,7 @@ export const blogService = {
       return updatedDoc;
     } catch (error) {
       console.error('Error updating blog post:', error);
-      return { success: false, error: 'Error al actualizar el artículo' };
+      return { success: false, error: 'Error al actualizar el artículo', rawError: error };
     }
   },
 
@@ -1629,7 +1637,7 @@ export const blogService = {
       return { success: true };
     } catch (error) {
       console.error('Error deleting blog post:', error);
-      return { success: false, error: 'Error al eliminar el artículo' };
+      return { success: false, error: 'Error al eliminar el artículo', rawError: error };
     }
   }
 };

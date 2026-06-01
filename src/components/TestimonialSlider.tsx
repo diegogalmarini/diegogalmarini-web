@@ -2,12 +2,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Testimonial } from '../types';
 import { Card } from './common';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TestimonialSliderProps {
   testimonials: Testimonial[];
 }
 
-const TestimonialCard: React.FC<{ testimonial: Testimonial, isVisible: boolean }> = ({ testimonial, isVisible }) => (
+const TestimonialCard: React.FC<{ testimonial: Testimonial, isVisible: boolean }> = ({ testimonial, isVisible }) => {
+  const { language } = useLanguage();
+  const quote = language === 'en' && testimonial.quoteEn ? testimonial.quoteEn : testimonial.quote;
+  const title = language === 'en' && testimonial.titleEn ? testimonial.titleEn : testimonial.title;
+
+  return (
     <div className={`relative h-full transition-all duration-700 ease-in-out ${isVisible ? 'opacity-100 transform-none' : 'opacity-0 translate-y-5'}`}>
         <Card className="h-full relative overflow-visible">
           <div className="absolute -top-12 left-0 right-0 mx-auto w-24 h-24 z-10 flex items-center justify-center">
@@ -23,16 +29,17 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial, isVisible: boolean }
           </div>
           <div className="pt-16 pb-6 px-6 h-full flex flex-col text-center items-center">
             <div className="flex-grow flex flex-col justify-center">
-              <p className="text-[var(--text-muted)] italic leading-relaxed text-base">"{testimonial.quote}"</p>
+              <p className="text-[var(--text-muted)] italic leading-relaxed text-base">"{quote}"</p>
             </div>
             <div className="mt-6 flex-shrink-0">
                 <p className="font-bold text-[var(--text-color)] text-lg">{testimonial.author}</p>
-                <p className="text-sm text-[var(--primary-color)] font-semibold">{testimonial.title}</p>
+                <p className="text-sm text-[var(--primary-color)] font-semibold">{title}</p>
             </div>
           </div>
         </Card>
     </div>
-);
+  );
+};
 
 export const TestimonialSlider: React.FC<TestimonialSliderProps> = ({ testimonials }) => {
   const [displayedTestimonials, setDisplayedTestimonials] = useState<Testimonial[]>([]);

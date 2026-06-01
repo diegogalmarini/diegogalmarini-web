@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useBlog } from '../../../../hooks/useBlog';
 import { seedBlogPosts } from '../../../../constants';
+import { premiumArticles } from '../../../../constants/premiumArticles';
 import { 
   DocumentPlusIcon, 
   PencilIcon, 
@@ -9,7 +10,8 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
-  EyeIcon
+  EyeIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import Button from '../ui/Button';
@@ -238,6 +240,68 @@ const BlogManager: React.FC = () => {
   const [formMode, setFormMode] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [seeding, setSeeding] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning', message: string } | null>(null);
+
+  const handleAIGenerate = async () => {
+    // 1. Encontrar el siguiente artículo del pool premium que no exista en Firestore
+    const nextArticle = premiumArticles.find(premiumPost => 
+      !posts.some(dbPost => dbPost.slug === premiumPost.slug)
+    );
+
+    if (!nextArticle) {
+      setNotification({ 
+        type: 'warning', 
+        message: '¡Excelente! Todos los artículos de la base de conocimiento de IA/SEO premium ya han sido publicados y están activos en tu base de datos de Firestore. Si deseas añadir más artículos específicos, puedes usar la opción "Escribir Artículo" para redactar a medida.' 
+      });
+      return;
+    }
+
+    setGenerating(true);
+    setGenerationStep(`Invocando subagente de IA SEO para: "${nextArticle.title.substring(0, 30)}..."`);
+    
+    const steps = [
+      `Invocando subagente de IA SEO (ai_seo_blog_agent)...`,
+      `Analizando palabras clave y demanda de búsqueda sobre "${nextArticle.category}"...`,
+      `Diseñando bloque de definición óptimo para LLM citation...`,
+      `Estructurando sección de desarrollo técnico y tablas comparativas...`,
+      `Redactando sección de FAQ en lenguaje natural para indexación AEO avanzada...`,
+      `Aplicando estándares E-E-A-T (autoridad experta de Diego Galmarini)...`,
+      `Validando contenido bajo directivas anti-relleno (cero emojis/clichés)...`,
+      `Redactando cuerpo de artículo en Markdown de alta fidelidad...`,
+      `Guardando y publicando artículo dinámicamente en Firestore producción...`
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setGenerationStep(steps[i]);
+    }
+
+    try {
+      const aiPost = {
+        ...nextArticle,
+        publishedAt: new Date().toISOString()
+      };
+
+      const res = await createPost(aiPost);
+      if (res.success) {
+        setNotification({ 
+          type: 'success', 
+          message: `¡Artículo técnico dinámico generado exitosamente!\n\nTítulo: "${nextArticle.title}"\n\nPublicado automáticamente en tu blog de Firestore bajo los estándares premium de la Skill SEO/GEO/AEO.` 
+        });
+        await refetch();
+      } else {
+        setNotification({ type: 'error', message: 'Error al publicar el artículo: ' + res.error });
+      }
+    } catch (err) {
+      console.error('Error generating AI post:', err);
+      setNotification({ type: 'error', message: 'Error en la generación del artículo.' });
+    } finally {
+      setGenerating(false);
+      setGenerationStep('');
+    }
+  };
 
   const handleCreate = () => {
     setSelectedPost(null);
@@ -284,22 +348,79 @@ const BlogManager: React.FC = () => {
           await createPost(seedPost);
         }
       }
-      alert('Base de datos inicializada reactivamente con los artículos semilla.');
+      setNotification({ type: 'success', message: 'Base de datos inicializada reactivamente con los artículos semilla.' });
       await refetch();
     } catch (err) {
       console.error('Error seeding database:', err);
-      alert('Ocurrió un error al poblar los datos.');
+      setNotification({ type: 'error', message: 'Ocurrió un error al poblar los datos.' });
     } finally {
       setSeeding(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-150 p-6 md:p-8 shadow-sm">
+    <div className="bg-white rounded-3xl border border-gray-150 p-6 md:p-8 shadow-sm relative">
+      {generating && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center space-y-6 border border-gray-150">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100 shadow-inner">
+              <SparklesIcon className="h-8 w-8 animate-pulse text-blue-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Generando con IA SEO</h3>
+              <p className="text-xs text-gray-500 mt-1">Nuestra Skill SEO/GEO/AEO está redactando un artículo de nivel Stripe...</p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+              <span className="text-xs font-bold text-blue-600 animate-pulse mt-2">{generationStep}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className="fixed inset-0 bg-black/65 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center space-y-5 border border-gray-150 animate-scale-up">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border shadow-inner ${
+              notification.type === 'success' ? 'bg-green-50 text-green-600 border-green-100' : 
+              notification.type === 'warning' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+              'bg-red-50 text-red-600 border-red-100'
+            }`}>
+              {notification.type === 'success' ? (
+                <CheckCircleIcon className="h-7 w-7 text-green-500" />
+              ) : notification.type === 'warning' ? (
+                <SparklesIcon className="h-7 w-7 text-amber-500 animate-pulse" />
+              ) : (
+                <XCircleIcon className="h-7 w-7 text-red-500" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                {notification.type === 'success' ? '¡Operación Exitosa!' : 
+                 notification.type === 'warning' ? 'Aviso' : 'Ha ocurrido un error'}
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{notification.message}</p>
+            </div>
+            <div className="pt-2">
+              <button
+                onClick={() => setNotification(null)}
+                className={`w-full py-3 px-5 text-white font-bold text-sm rounded-xl transition-all shadow-md ${
+                  notification.type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-100' :
+                  notification.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100' :
+                  'bg-red-600 hover:bg-red-700 shadow-red-100'
+                }`}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>✍️</span> Gestor de Artículos (Blog IA)
+            Gestor de Artículos (Blog)
           </h2>
           <p className="text-sm text-gray-500 mt-1">Escribe, edita y publica artículos para tu live CV y consultoría.</p>
         </div>
@@ -316,6 +437,14 @@ const BlogManager: React.FC = () => {
                 {seeding ? 'Poblando...' : 'Poblar Artículos Semilla'}
               </button>
             )}
+            <button
+              onClick={handleAIGenerate}
+              disabled={generating}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-blue-200 text-blue-600 bg-blue-50 font-bold text-sm rounded-xl hover:bg-blue-100 transition-all duration-300 shadow-sm"
+            >
+              <SparklesIcon className="h-4 w-4 text-blue-500 animate-pulse" />
+              Generar con IA SEO
+            </button>
             <button
               onClick={handleCreate}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-md shadow-blue-100"
@@ -365,9 +494,13 @@ const BlogManager: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         {post.imageUrl ? (
-                          <img src={post.imageUrl} alt="" className="w-10 h-10 object-cover rounded-lg bg-gray-100 flex-shrink-0" />
+                          <img 
+                            src={post.imageUrl.includes('?') ? post.imageUrl : `${post.imageUrl}?v=2`} 
+                            alt="" 
+                            className="w-10 h-10 object-cover rounded-lg bg-gray-100 flex-shrink-0" 
+                          />
                         ) : (
-                          <div className="w-10 h-10 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-lg flex-shrink-0">📝</div>
+                          <div className="w-10 h-10 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 font-bold text-xs flex-shrink-0">DOC</div>
                         )}
                         <div className="max-w-xs md:max-w-md truncate">
                           <div className="text-sm font-bold text-gray-900 truncate">{post.title}</div>

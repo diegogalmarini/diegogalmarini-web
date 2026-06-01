@@ -52,6 +52,7 @@ import {
 interface CRMDashboardProps {
   className?: string;
   onNavigate?: (tab: string) => void;
+  openModal?: (type: 'consultation' | 'client' | 'appointment' | 'confirmation' | 'followUp' | null, mode: 'create' | 'edit' | 'view' | 'confirm' | null, data?: any) => void;
 }
 
 // Tipos para las vistas
@@ -560,7 +561,8 @@ const ClientFormWrapper: React.FC<ClientFormWrapperProps> = ({ clientId, onSubmi
 // Componente principal
 export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   className = '',
-  onNavigate
+  onNavigate,
+  openModal: propOpenModal
 }) => {
   // Estados locales
   const [modalState, setModalState] = useState<ModalState>({
@@ -615,14 +617,22 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       return;
     }
 
-    const newState = { type, mode, data };
-    setModalState(newState);
-  }, []);
+    if (propOpenModal) {
+      propOpenModal(type as any, mode as any, data);
+    } else {
+      const newState = { type, mode, data };
+      setModalState(newState);
+    }
+  }, [propOpenModal]);
 
   const closeModal = useCallback(() => {
     console.log('🔒 Closing modal');
-    setModalState({ type: null, mode: null, data: null });
-  }, []);
+    if (propOpenModal) {
+      propOpenModal(null, null, null);
+    } else {
+      setModalState({ type: null, mode: null, data: null });
+    }
+  }, [propOpenModal]);
 
   // Manejadores de acciones rápidas
   const handleCreateConsultation = useCallback(() => {
@@ -639,6 +649,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
   // Renderizar modal según el estado
   const renderModal = () => {
+    if (propOpenModal) return null;
     if (!modalState.type || !modalState.mode) return null;
 
     const { type, mode, data } = modalState;
@@ -714,6 +725,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
               consultation={liveConsultation}
               onEdit={() => openModal('consultation', 'edit', liveConsultation)}
               onUpdateStatus={(id, status) => updateConsultation(id, { status: status as any })}
+              onUpdatePaymentStatus={(id, paymentStatus) => updateConsultation(id, { paymentStatus })}
               onDelete={() => {
                 deleteConsultation(liveConsultation.id);
                 closeModal();

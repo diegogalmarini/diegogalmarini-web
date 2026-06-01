@@ -14,6 +14,7 @@ interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   className?: string;
+  plain?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -24,7 +25,8 @@ const Modal: React.FC<ModalProps> = ({
   size = 'md',
   showCloseButton = true,
   closeOnOverlayClick = true,
-  className = ''
+  className = '',
+  plain = false
 }) => {
   console.log('🎭 Modal component rendered with props:', { isOpen, title, size });
   console.log('🎭 Modal children:', children ? 'Present' : 'Missing');
@@ -93,36 +95,45 @@ const Modal: React.FC<ModalProps> = ({
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel 
-                className={`w-full ${sizeClasses[size]} transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all ${className}`}
+                className={plain
+                  ? `w-full ${sizeClasses[size]} transform overflow-visible bg-transparent p-0 text-left align-middle transition-all ${className}`
+                  : `w-full ${sizeClasses[size]} transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all ${className}`
+                }
               >
-                {/* Header */}
-                {(title || showCloseButton) && (
-                  <div className="flex items-center justify-between mb-4">
-                    {title && (
-                      <Dialog.Title
-                        as="h3"
-                        className="text-lg font-medium leading-6 text-gray-900"
-                      >
-                        {title}
-                      </Dialog.Title>
+                {plain ? (
+                  children
+                ) : (
+                  <>
+                    {/* Header */}
+                    {(title || showCloseButton) && (
+                      <div className="flex items-center justify-between mb-4">
+                        {title && (
+                          <Dialog.Title
+                            as="h3"
+                            className="text-lg font-medium leading-6 text-gray-900"
+                          >
+                            {title}
+                          </Dialog.Title>
+                        )}
+                        {showCloseButton && (
+                          <button
+                            type="button"
+                            className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            onClick={onClose}
+                          >
+                            <span className="sr-only">Cerrar</span>
+                            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
                     )}
-                    {showCloseButton && (
-                      <button
-                        type="button"
-                        className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        onClick={onClose}
-                      >
-                        <span className="sr-only">Cerrar</span>
-                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                      </button>
-                    )}
-                  </div>
-                )}
 
-                {/* Content */}
-                <div className="mt-2">
-                  {children}
-                </div>
+                    {/* Content */}
+                    <div className="mt-2 max-h-[calc(100vh-10rem)] overflow-y-auto pr-1">
+                      {children}
+                    </div>
+                  </>
+                )}
               </Dialog.Panel>
             </Transition.Child>
           </div>

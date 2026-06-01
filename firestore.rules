@@ -3,22 +3,57 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Reglas para la colección de clientes
     match /clients/{clientId} {
-      allow read, write: if true; // Permitir acceso completo por ahora
+      allow read, write: if true;
     }
     
     // Reglas para la colección de consultas
     match /consultations/{consultationId} {
-      allow read, write: if true; // Permitir acceso completo por ahora
+      allow read, write: if true;
     }
     
     // Reglas para la colección de citas
     match /appointments/{appointmentId} {
-      allow read, write: if true; // Permitir acceso completo por ahora
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de disponibilidad
+    match /availability/{id} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de periodos bloqueados
+    match /blockedPeriods/{id} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de plantillas de mensajes
+    match /messageTemplates/{id} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de registros de comunicación
+    match /communicationLogs/{id} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de seguimientos
+    match /followUps/{id} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la colección de usuarios
+    match /users/{id} {
+      allow read, write: if true;
     }
     
     // Reglas para la colección de planes
     match /plans/{planId} {
-      allow read, write: if true; // Permitir acceso completo por ahora
+      allow read, write: if true;
+    }
+    
+    // Reglas para la colección de blog
+    match /blog/{blogId} {
+      allow read, write: if true;
     }
     
     // Regla por defecto - denegar acceso a otras colecciones

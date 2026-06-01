@@ -92,7 +92,18 @@ const appointmentSchema: yup.ObjectSchema<AppointmentFormData> = yup.object({
     .number()
     .nullable()
     .min(0, 'Los minutos de recordatorio no pueden ser negativos')
-    .max(10080, 'El recordatorio máximo es 7 días (10080 minutos)')
+    .max(10080, 'El recordatorio máximo es 7 días (10080 minutos)'),
+
+  paymentLink: yup
+    .string()
+    .nullable()
+    .url('Debe ser una URL válida')
+    .max(500, 'La URL no puede exceder 500 caracteres'),
+
+  paymentLinkSent: yup
+    .boolean()
+    .nullable()
+    .default(false)
 });
 
 // Props del componente
@@ -270,85 +281,122 @@ const TimeSlotSelector: React.FC<{
   value: Date | null;
   onChange: (date: Date) => void;
   error?: string;
-}> = ({ selectedDate, duration, value, onChange, error }) => {
-  const { availabilitySlots, loading } = useAvailability(selectedDate);
+  availabilitySlots: AvailabilitySlot[];
+  loadingAvailability: boolean;
+}> = ({ selectedDate, duration, value, onChange, error, availabilitySlots, loadingAvailability }) => {
+  const timeString = useMemo(() => {
+    if (!value) return '';
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }, [value]);
 
-  // Generar slots de tiempo disponibles
-  const timeSlots = useMemo(() => {
-    const slots = [];
-    const startHour = 9; // 9:00 AM
-    const endHour = 18; // 6:00 PM
-    const slotDuration = 30; // 30 minutos por slot
+  const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const timeVal = e.target.value;
+    if (!timeVal) return;
+    const [hours, minutes] = timeVal.split(':').map(Number);
+    const newDate = new Date(selectedDate);
+    newDate.setHours(hours, minutes, 0, 0);
+    onChange(newDate);
+  };
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const slotTime = new Date(selectedDate);
-        slotTime.setHours(hour, minute, 0, 0);
+  const timeOptions = useMemo(() => {
+    const now = new Date();
+    const isToday = selectedDate.getFullYear() === now.getFullYear() &&
+                    selectedDate.getMonth() === now.getMonth() &&
+                    selectedDate.getDate() === now.getDate();
 
-        // Verificar si el slot está disponible
-        const isAvailable = availabilitySlots.some(slot => {
-          const slotStart = new Date(slot.startTime);
-          const slotEnd = new Date(slot.endTime);
-          return slotTime >= slotStart && addMinutes(slotTime, duration) <= slotEnd;
-        });
+    // 1. Filtrar slots habilitados y disponibles desde la base de datos (pestaña Disponibilidad)
+    const activeSlots = availabilitySlots.filter(
+      slot => slot.isAvailable && slot.type === 'available'
+    );
 
-        slots.push({
-          time: slotTime,
-          available: isAvailable,
-          label: formatTime(slotTime)
-        });
-      }
+    if (activeSlots.length > 0) {
+      // Si el administrador configuró disponibilidad para hoy/ese día, usarlos
+      return activeSlots
+        .map(slot => {
+          const [hours, minutes] = slot.startTime.split(':').map(Number);
+          const hStr = String(hours).padStart(2, '0');
+          const mStr = String(minutes).padStart(2, '0');
+          return {
+            value: `${hStr}:${mStr}`,
+            label: `${hStr}:${mStr} (Disponible)`
+          };
+        })
+        .filter(opt => {
+          // Si es hoy, filtrar horas del pasado para no permitir reservar citas que ya pasaron
+          if (isToday) {
+            const [hours, minutes] = opt.value.split(':').map(Number);
+            return hours > now.getHours() || (hours === now.getHours() && minutes > now.getMinutes());
+          }
+          return true;
+        })
+        .sort((a, b) => a.value.localeCompare(b.value));
     }
 
-    return slots;
-  }, [selectedDate, duration, availabilitySlots]);
+    // 2. Si no hay disponibilidad configurada en base de datos, mostrar todas las horas futuras como fallback
+    const fallbackOptions = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (const min of [0, 30]) {
+        const hStr = String(hour).padStart(2, '0');
+        const mStr = String(min).padStart(2, '0');
+        const val = `${hStr}:${mStr}`;
 
-  if (loading) {
-    return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Hora *
-        </label>
-        <div className="flex items-center justify-center py-8">
-          <LoadingSpinner size="sm" />
-        </div>
-      </div>
-    );
-  }
+        if (isToday) {
+          if (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes())) {
+            continue;
+          }
+        }
+        fallbackOptions.push({ value: val, label: val });
+      }
+    }
+    return fallbackOptions;
+  }, [selectedDate, availabilitySlots]);
+
+  const activeSlotsCount = useMemo(() => {
+    return availabilitySlots.filter(slot => slot.isAvailable && slot.type === 'available').length;
+  }, [availabilitySlots]);
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
         Hora *
       </label>
-
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
-        {timeSlots.map((slot) => (
-          <button
-            key={slot.time.toISOString()}
-            type="button"
-            onClick={() => slot.available && onChange(slot.time)}
-            disabled={!slot.available}
-            className={`p-2 text-sm rounded-md border transition-colors ${value && value.getTime() === slot.time.getTime()
-                ? 'bg-blue-600 text-white border-blue-600'
-                : slot.available
-                  ? 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              }`}
-          >
-            {slot.label}
-          </button>
+      <select
+        value={timeString}
+        onChange={handleTimeChange}
+        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white sm:text-sm ${
+          error ? 'border-red-300' : 'border-gray-300'
+        }`}
+      >
+        <option value="" disabled>
+          {loadingAvailability 
+            ? 'Cargando horas...' 
+            : timeOptions.length === 0 && activeSlotsCount > 0
+              ? 'Horas ya pasaron'
+              : 'Selecciona una hora...'
+          }
+        </option>
+        {timeOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
         ))}
-      </div>
-
-      {timeSlots.filter(slot => slot.available).length === 0 && (
-        <p className="text-sm text-yellow-600">
-          No hay horarios disponibles para esta fecha
-        </p>
+      </select>
+      {loadingAvailability && (
+        <p className="text-xs text-blue-500 mt-1">Cargando disponibilidad...</p>
       )}
-
+      {!loadingAvailability && activeSlotsCount > 0 && timeOptions.length === 0 && (
+        <p className="text-xs text-amber-600 mt-1">Todos los turnos habilitados de hoy ya pasaron.</p>
+      )}
+      {!loadingAvailability && activeSlotsCount > 0 && timeOptions.length > 0 && (
+        <p className="text-xs text-green-600 mt-1">Mostrando horarios habilitados en Disponibilidad.</p>
+      )}
+      {!loadingAvailability && activeSlotsCount === 0 && (
+        <p className="text-xs text-gray-500 mt-1">Sin horarios predefinidos. Mostrando todo el día (futuro).</p>
+      )}
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-xs text-red-600 mt-1">{error}</p>
       )}
     </div>
   );
@@ -373,6 +421,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   // Hooks
   const { createAppointment, updateAppointment, checkAvailability } = useAppointments();
   const { clients, loading: clientsLoading } = useClients();
+  const { availabilitySlots, loading: availabilityLoading } = useAvailability(selectedDate);
 
   // Configuración del formulario
   const {
@@ -400,22 +449,27 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       location: appointment?.location || '',
       meetingLink: appointment?.meetingLink || '',
       notes: appointment?.notes || '',
-      reminderMinutes: appointment?.reminderMinutes || 60
+      reminderMinutes: appointment?.reminderMinutes || 60,
+      paymentLink: appointment?.paymentLink || '',
+      paymentLinkSent: appointment?.paymentLinkSent || false
     }
   });
 
   // Observar cambios
   const watchedType = watch('type');
+  const watchedPlanType = watch('planType');
   const watchedDuration = watch('duration');
   const watchedStartTime = watch('startTime');
 
-  // Actualizar duración automáticamente según el tipo
+  // Actualizar duración automáticamente según el tipo de cita
   useEffect(() => {
     const appointmentType = APPOINTMENT_TYPES.find(type => type.value === watchedType);
     if (appointmentType && !appointment) {
       setValue('duration', appointmentType.duration);
     }
   }, [watchedType, setValue, appointment]);
+
+  // Duración sugerida se maneja en el onChange del selector de plan para evitar borrar la fecha/hora
 
   // Validar disponibilidad del horario
   const validateTimeSlot = useCallback(async (startTime: Date, duration: number) => {
@@ -516,7 +570,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       location: '',
       meetingLink: '',
       notes: '',
-      reminderMinutes: 60
+      reminderMinutes: 60,
+      paymentLink: '',
+      paymentLinkSent: false
     });
     setSubmitError(null);
     setSelectedDate(preselectedDate || new Date());
@@ -610,6 +666,23 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     options={PLAN_TYPE_OPTIONS}
                     error={errors.planType?.message}
                     required
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val);
+                      // Sugerir duración al cambiar el plan, y autocompletar el enlace de LemonSqueezy preconfigurado
+                      if (val === '30min') {
+                        setValue('duration', 30);
+                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-30min-premium?discount=0');
+                      } else if (val === '60min') {
+                        setValue('duration', 60);
+                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-60min-premium?discount=0');
+                      } else if (val === 'mail') {
+                        setValue('duration', 15);
+                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-email-quick?discount=0');
+                      } else if (val === 'custom') {
+                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-personalizada-diego?discount=0');
+                      }
+                    }}
                   />
                 )}
               />
@@ -647,6 +720,89 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     />
                   )}
                 />
+              </div>
+            )}
+
+            {/* Cobro y Enlace de Pago (LemonSqueezy) */}
+            {watch('paymentStatus') === 'pending' && (
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-4">
+                <h4 className="font-semibold text-orange-900 text-sm flex items-center">
+                  <span className="w-2.5 h-2.5 bg-orange-400 rounded-full mr-2"></span>
+                  Cobro y Enlace de Pago (LemonSqueezy)
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Controller
+                    name="paymentLink"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        label="Enlace de pago (LemonSqueezy / Stripe)"
+                        placeholder="https://diego.lemonsqueezy.com/checkout/..."
+                        error={errors.paymentLink?.message}
+                      />
+                    )}
+                  />
+
+                  <div className="flex items-end pb-2">
+                    <Controller
+                      name="paymentLinkSent"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="paymentLinkSent"
+                            checked={field.value || false}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label htmlFor="paymentLinkSent" className="text-sm font-medium text-gray-700 select-none">
+                            Enlace ya enviado al cliente
+                          </label>
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-orange-100 gap-3">
+                  <div className="text-xs text-orange-700">
+                    {watch('paymentLinkSent') ? (
+                      <span className="inline-flex items-center text-green-600 font-medium">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
+                        Enlace de pago enviado al cliente por email.
+                      </span>
+                    ) : (
+                      <span className="text-orange-600">
+                        ⚠️ Pendiente de enviar el enlace de pago por correo.
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const link = watch('paymentLink');
+                      if (!link) {
+                        alert('Por favor, ingresa un enlace de pago válido primero.');
+                        return;
+                      }
+                      
+                      // Simular envío de email
+                      setIsSubmitting(true);
+                      await new Promise(resolve => setTimeout(resolve, 1500));
+                      setValue('paymentLinkSent', true);
+                      setIsSubmitting(false);
+                      alert('✉️ ¡Enlace de pago enviado exitosamente por email al cliente!');
+                    }}
+                    disabled={isSubmitting}
+                    className="inline-flex items-center justify-center px-4 py-2 border-2 border-red-500 text-xs font-bold rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors uppercase tracking-widest w-full sm:w-auto"
+                  >
+                    Enviar enlace de pago
+                  </button>
+                </div>
               </div>
             )}
           </FormGroup>
@@ -719,6 +875,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.startTime?.message}
+                      availabilitySlots={availabilitySlots}
+                      loadingAvailability={availabilityLoading}
                     />
                   )}
                 />

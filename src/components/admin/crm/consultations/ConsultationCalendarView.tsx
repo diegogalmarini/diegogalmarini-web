@@ -2,7 +2,7 @@
 // Incluye vista de calendario mensual con indicadores de estado y lista de consultas por día
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   ChevronLeftIcon,
@@ -78,10 +78,12 @@ const ConsultationCalendarView: React.FC<ConsultationCalendarViewProps> = ({
     loadConsultations
   } = useConsultations();
 
-  // Calcular días del mes actual
+  // Calcular días del mes actual incluyendo relleno de días de la semana
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Domingo es 0
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const monthDays = eachDayOfInterval({ start: startDate, end: endDate });
 
   // Agrupar consultas por fecha
   const consultationsByDate = useMemo(() => {

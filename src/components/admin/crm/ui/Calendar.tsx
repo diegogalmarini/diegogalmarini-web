@@ -1,6 +1,6 @@
 // Componente de calendario mejorado para mostrar consultas y citas
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, parseISO, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, parseISO, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import type { Appointment, Consultation, BlockedPeriod } from '../../../../types/crm';
@@ -47,10 +47,12 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
   };
 
-  // Calcular fechas del mes actual
+  // Calcular fechas del mes actual incluyendo relleno de días de la semana
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Domingo es 0
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const monthDays = eachDayOfInterval({ start: startDate, end: endDate });
 
   // Navegación del calendario
   const goToPreviousMonth = () => handleMonthChange(subMonths(currentDate, 1));

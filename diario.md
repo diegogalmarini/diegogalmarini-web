@@ -115,3 +115,33 @@ Limpiar y organizar el espacio de trabajo del SaaS eliminando duplicaciones de c
 
 ### 🧪 Verificaciones y Compilación
 * **Vite Production Bundler:** Se corrió el build con éxito total de salida. El empaquetador generó todos los chunks de producción fragmentados correctamente.
+
+---
+
+## 🗓️ Registro del Día: 5 de Junio de 2026
+
+### 🚀 Objetivos del Día
+Migrar el sistema de cobros del SaaS de Diego Galmarini de Lemon Squeezy a Stripe, utilizando Stripe Payment Links nativos en el frontend con redirección automática a una landing page de confirmación de pago y actualización en tiempo real del estado de reservas en la base de datos Firestore.
+
+### 🌟 Logros y Modificaciones Realizadas
+
+#### 1. Cimientos y Enlaces (Completado)
+* **Datos Semilla:** Actualizamos los valores de `paymentLink` por defecto en [PlansContext.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/contexts/PlansContext.tsx) con marcadores de posición de Stripe (`https://buy.stripe.com/...`).
+* **Panel de Control:** Modificamos las etiquetas, marcadores y placeholders del administrador de planes en [PlanManager.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/components/admin/crm/plans/PlanManager.tsx) para reflejar la migración hacia Stripe.
+* **Autocompletado de Citas:** Actualizamos la lógica en [AppointmentForm.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/components/admin/crm/appointments/AppointmentForm.tsx) para sugerir enlaces de Stripe en lugar de Lemon Squeezy al agendar manualmente.
+
+#### 2. Checkout de Reservas (Completado)
+* **Desinstalación del SDK:** Eliminamos por completo la carga dinámica del script de Lemon Squeezy (`lemon.js`) en [BookingModal.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/components/BookingModal.tsx).
+* **Botón de Pago:** Cambiamos el comportamiento del botón de pago para abrir el Stripe Payment Link en una nueva pestaña pasando el ID del documento Firestore mediante el parámetro de consulta `client_reference_id`. Adaptamos la interfaz al color corporativo azul de Stripe.
+
+#### 3. Página de Confirmación (Completado)
+* **Landing Success:** Desarrollamos la vista [PaymentSuccessPage.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/pages/PaymentSuccessPage.tsx) para procesar el redireccionamiento de Stripe. Al cargar, extrae el ID de la consulta, actualiza en Firestore los campos `paymentStatus` a `'paid'` y `status` a `'confirmed'`, y ofrece al cliente la descarga de archivos de calendario (.ics) e integración con Google Calendar.
+* **Rutas del Sistema:** Registramos las rutas `/payment-success` y `/en/payment-success` en [App.tsx](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/App.tsx).
+
+#### 4. Tipado (Completado)
+* **Tipos de Vite:** Creamos el archivo [vite-env.d.ts](file:///C:/Users/diego/diegogalmarini-web-style-resend/src/vite-env.d.ts) para solventar errores de compilación sobre variables de entorno en Vite (`import.meta.env`).
+
+### 🧪 Verificaciones y Compilación
+* **Typecheck:** Compilación limpia de TypeScript (`npm run typecheck`) con 0 errores de tipo.
+* **Build:** Empaquetado exitoso (`npm run build`) para despliegue en producción.
+

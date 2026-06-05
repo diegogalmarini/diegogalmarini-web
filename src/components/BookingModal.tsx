@@ -65,48 +65,10 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, pres
     }
   };
 
-  // Cargar SDK de Lemon Squeezy dinámicamente
+  // Resetear estado de pago al abrir
   useEffect(() => {
     if (isOpen) {
       setIsPaid(false);
-      // Asegurarse de que el script de Lemon Squeezy esté en el documento
-      if (!document.getElementById('lemonsqueezy-sdk')) {
-        const script = document.createElement('script');
-        script.id = 'lemonsqueezy-sdk';
-        script.src = 'https://assets.lemonsqueezy.com/lemon.js';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          console.log('🍋 Lemon Squeezy SDK cargado e inicializando callbacks...');
-          if ((window as any).LemonSqueezy) {
-            (window as any).LemonSqueezy.Setup({
-              eventHandler: (event: any) => {
-                console.log('🍋 Lemon Squeezy Evento Recibido:', event);
-                if (event.event === 'Checkout.Success') {
-                  console.log('🍋 Checkout exitoso detectado!');
-                  const storedId = window.localStorage.getItem('last_consultation_id');
-                  handlePaymentSuccess(storedId);
-                }
-              }
-            });
-          }
-        };
-        document.body.appendChild(script);
-      } else {
-        console.log('🍋 Lemon Squeezy SDK ya estaba presente, reinicializando callbacks...');
-        if ((window as any).LemonSqueezy) {
-          (window as any).LemonSqueezy.Setup({
-            eventHandler: (event: any) => {
-              console.log('🍋 Lemon Squeezy Evento Recibido (existente):', event);
-              if (event.event === 'Checkout.Success') {
-                console.log('🍋 Checkout exitoso detectado!');
-                const storedId = window.localStorage.getItem('last_consultation_id');
-                handlePaymentSuccess(storedId);
-              }
-            }
-          });
-        }
-      }
     }
   }, [isOpen]);
 
@@ -569,20 +531,22 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, pres
                         : 'Te enviaremos por correo los detalles de la reunión y la confirmación. ¡Gracias!')
                   }
                 </p>
-                {/* Botón de Pago Lemonsqueezy */}
+                {/* Botón de Pago Stripe */}
                 {currentPlanId !== 'free' && activePlan?.paymentLink && (
                   <div className="w-full max-w-md mb-6 hover:scale-101 transition-all">
                     {isPaid ? (
                       <div className="w-full py-3.5 px-4 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md flex items-center justify-center gap-2 transition-all">
                         <span className="text-sm font-extrabold uppercase tracking-wider">
-                          ✓ {language === 'en' ? 'Payment Verified & Confirmed!' : '¡Pago Verificado y Confirmado!'}
+                          ✓ {language === 'en' ? 'Payment Verified & Confirmed!' : '¡Pago Verificado y Confirmed!'}
                         </span>
                       </div>
                     ) : (
                       <>
                         <a
-                          href={activePlan.paymentLink + (activePlan.paymentLink.includes('?') ? '&embed=1' : '?embed=1')}
-                          className="lemonsqueezy-button w-full py-3.5 px-4 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:opacity-95 shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer"
+                          href={`${activePlan.paymentLink}?client_reference_id=${createdConsultationId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-3.5 px-4 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-95 shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer text-center"
                           onClick={() => {
                             trackEvent('begin_payment', {
                               item_id: currentPlanId,
@@ -598,7 +562,7 @@ const SimpleBookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, pres
                           <IoChevronForward className="w-4 h-4 animate-pulse" />
                         </a>
                         <p className="text-[10px] text-gray-500 mt-2 italic">
-                          {language === 'en' ? 'Complete payment on Lemon Squeezy to confirm your scheduled slot.' : 'Completa el pago en Lemon Squeezy para confirmar tu reserva.'}
+                          {language === 'en' ? 'Complete payment on Stripe to confirm your scheduled slot.' : 'Completa el pago en Stripe para confirmar tu reserva.'}
                         </p>
                       </>
                     )}

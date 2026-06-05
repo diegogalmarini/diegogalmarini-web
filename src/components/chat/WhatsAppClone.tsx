@@ -197,8 +197,8 @@ const WhatsAppClone: React.FC<WhatsAppCloneProps> = ({ onBookCall }) => {
           id: `diego-checkout-${Date.now()}`,
           sender: 'diego',
           text: language === 'en'
-            ? `Excellent, ${clientName}! Your session is pre-booked for ${selectedDateStr} at ${selectedTime} hs. To confirm your appointment, please complete the payment (€150) via LemonSqueezy:`
-            : `¡Excelente, ${clientName}! Tu sesión está pre-reservada para el ${selectedDateStr} a las ${selectedTime} hs. Para confirmar tu cita, realiza el pago de la consulta (€150) por LemonSqueezy:`,
+            ? `Excellent, ${clientName}! Your session is pre-booked for ${selectedDateStr} at ${selectedTime} hs. To confirm your appointment, please complete the payment (€150) via Stripe:`
+            : `¡Excelente, ${clientName}! Tu sesión está pre-reservada para el ${selectedDateStr} a las ${selectedTime} hs. Para confirmar tu cita, realiza el pago de la consulta (€150) por Stripe:`,
           time: new Date().toLocaleTimeString(language === 'es' ? 'es-ES' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
           isCustomUI: 'checkout'
         };
@@ -273,8 +273,8 @@ const WhatsAppClone: React.FC<WhatsAppCloneProps> = ({ onBookCall }) => {
                 ? `Your query has been sent successfully! 🎉\n\nI will analyze your case personally and reply to your email at **${clientEmail}** in less than 24 business hours. Talk soon!`
                 : `¡Tu consulta ha sido enviada con éxito! 🎉\n\nAnalizaré tu caso personalmente y te responderé por correo a **${clientEmail}** en menos de 24 horas hábiles. ¡Hablamos pronto!`)
             : (language === 'en'
-                ? `Your appointment has been confirmed successfully! 🎉\n\nWe are scheduled for **${selectedDateStr}** at **${selectedTime} hs** via Google Meet.\n\nWe have sent you an email with the meeting link and the LemonSqueezy payment confirmation. See you soon!`
-                : `¡Tu cita ha sido confirmada con éxito! 🎉\n\nQuedamos para el día **${selectedDateStr}** a las **${selectedTime} hs** por Google Meet.\n\nTe hemos enviado un correo con el enlace de la reunión y la confirmación de pago de LemonSqueezy. ¡Nos vemos pronto!`),
+                ? `Your appointment has been confirmed successfully! 🎉\n\nWe are scheduled for **${selectedDateStr}** at **${selectedTime} hs** via Google Meet.\n\nWe have sent you an email with the meeting link and the Stripe payment confirmation. See you soon!`
+                : `¡Tu cita ha sido confirmada con éxito! 🎉\n\nQuedamos para el día **${selectedDateStr}** a las **${selectedTime} hs** por Google Meet.\n\nTe hemos enviado un correo con el enlace de la reunión y la confirmación de pago de Stripe. ¡Nos vemos pronto!`),
           time: new Date().toLocaleTimeString(language === 'es' ? 'es-ES' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
           isCustomUI: 'confirmed'
         };
@@ -760,17 +760,17 @@ const WhatsAppClone: React.FC<WhatsAppCloneProps> = ({ onBookCall }) => {
                         
                         <div className="pt-2 border-t border-orange-100 flex flex-col gap-1.5">
                           <a
-                            href="https://diego.lemonsqueezy.com/checkout/buy/consulta-30min-premium?discount=0"
+                            href="https://buy.stripe.com/dRm5kx9VHcwQ5VTf3G1oI00"
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => {
                               setHasClickedPayment(true);
                               trackEvent('chat_begin_payment', { price: 150, currency: 'EUR' });
                             }}
-                            className="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-bold text-center rounded-xl text-xs shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider select-none"
+                            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-750 text-white font-bold text-center rounded-xl text-xs shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider select-none animate-pulse"
                             style={{ textDecoration: 'none' }}
                           >
-                            {language === 'en' ? '💳 Pay with LemonSqueezy' : '💳 Pagar con LemonSqueezy'}
+                            {language === 'en' ? '💳 Pay with Stripe' : '💳 Pagar con Stripe'}
                           </a>
                           
                           <button

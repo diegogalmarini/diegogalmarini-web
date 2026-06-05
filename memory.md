@@ -40,6 +40,13 @@ Este archivo es la memoria persistente del sistema. Aquí se registran los retos
 *   **Solución**: Se integró `startOfWeek` y `endOfWeek` de `date-fns` en `Calendar.tsx` y `ConsultationCalendarView.tsx` para calcular las fechas del intervalo en base a semanas completas (comenzando en Domingo 0).
 *   **Gotcha**: Al renderizar calendarios en React con rejillas de columnas CSS de 7 días, siempre inicia el intervalo en el primer día de la semana correspondiente al inicio del mes, rellenando con los días del mes anterior y opacándolos.
 
+### 7. Migración de Lemon Squeezy a Stripe y Redirecciones
+*   **Problema**: La integración heredada de Lemon Squeezy utilizaba un SDK externo (`lemon.js`) para capturar eventos de éxito del checkout mediante un iframe superpuesto en el cliente. Stripe Payment Links no soporta overlays nativos por Javascript de manera sencilla y segura sin un backend dedicado.
+*   **Causa**: Limitaciones de comunicación entre iframes y CORS.
+*   **Solución**: Se sustituyó el SDK por redirecciones directas de Stripe pasando la variable de consulta `client_reference_id` (añadida dinámicamente como `?client_reference_id=CONSULTATION_ID`). Se creó una página `/payment-success` que recoge este parámetro, localiza el ID de la consulta en Firestore y marca el estado de la reserva como pagado (`paid`) y confirmado (`confirmed`).
+*   **Gotcha**: Al usar Stripe Payment Links en la SPA, asegúrate de activar la redirección de cliente en Stripe y apuntar a la URL `/payment-success`, de manera que la aplicación frontend recoja el ID y confirme el pago de forma reactiva en la base de datos.
+
+
 ---
 
 ## 📈 Historial de Evolución Arquitectónica

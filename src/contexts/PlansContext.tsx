@@ -46,7 +46,7 @@ const defaultPlans: (Plan & { order: number })[] = [
     descriptionEn: 'Detailed analysis of a specific problem with a concrete action plan. Includes follow-up by email to resolve subsequent questions.',
     isActive: true,
     order: 1,
-    paymentLink: '',
+    paymentLink: 'https://buy.stripe.com/dRm5kx9VHcwQ5VTf3G1oI00',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -62,7 +62,7 @@ const defaultPlans: (Plan & { order: number })[] = [
     descriptionEn: 'For complex challenges, architecture, or strategic roadmaps. Includes in-depth analysis, custom strategy, detailed documentation, and one-week support.',
     isActive: true,
     order: 2,
-    paymentLink: '',
+    paymentLink: 'https://buy.stripe.com/7sY9AN6Jv9kEesp5t61oI01',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }

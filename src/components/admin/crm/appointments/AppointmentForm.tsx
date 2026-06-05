@@ -669,18 +669,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     onChange={(e) => {
                       const val = e.target.value;
                       field.onChange(val);
-                      // Sugerir duración al cambiar el plan, y autocompletar el enlace de LemonSqueezy preconfigurado
+                      // Sugerir duración al cambiar el plan, y autocompletar el enlace de Stripe preconfigurado
                       if (val === '30min') {
                         setValue('duration', 30);
-                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-30min-premium?discount=0');
+                        setValue('paymentLink', 'https://buy.stripe.com/dRm5kx9VHcwQ5VTf3G1oI00');
                       } else if (val === '60min') {
                         setValue('duration', 60);
-                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-60min-premium?discount=0');
+                        setValue('paymentLink', 'https://buy.stripe.com/7sY9AN6Jv9kEesp5t61oI01');
                       } else if (val === 'mail') {
                         setValue('duration', 15);
-                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-email-quick?discount=0');
+                        setValue('paymentLink', 'https://buy.stripe.com/mock-consulta-email');
                       } else if (val === 'custom') {
-                        setValue('paymentLink', 'https://diego.lemonsqueezy.com/checkout/buy/consulta-personalizada-diego?discount=0');
+                        setValue('paymentLink', 'https://buy.stripe.com/mock-consulta-personalizada');
                       }
                     }}
                   />
@@ -723,12 +723,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               </div>
             )}
 
-            {/* Cobro y Enlace de Pago (LemonSqueezy) */}
+            {/* Cobro y Enlace de Pago (Stripe) */}
             {watch('paymentStatus') === 'pending' && (
-              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-4">
-                <h4 className="font-semibold text-orange-900 text-sm flex items-center">
-                  <span className="w-2.5 h-2.5 bg-orange-400 rounded-full mr-2"></span>
-                  Cobro y Enlace de Pago (LemonSqueezy)
+              <div className="mt-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg space-y-4">
+                <h4 className="font-semibold text-blue-900 text-sm flex items-center">
+                  <span className="w-2.5 h-2.5 bg-blue-400 rounded-full mr-2"></span>
+                  Cobro y Enlace de Pago (Stripe)
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -738,8 +738,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     render={({ field }) => (
                       <Input
                         {...field}
-                        label="Enlace de pago (LemonSqueezy / Stripe)"
-                        placeholder="https://diego.lemonsqueezy.com/checkout/..."
+                        label="Enlace de pago (Stripe)"
+                        placeholder="https://buy.stripe.com/..."
                         error={errors.paymentLink?.message}
                       />
                     )}

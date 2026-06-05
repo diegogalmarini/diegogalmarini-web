@@ -360,16 +360,16 @@ const PlanManager: React.FC = () => {
             </div>
           </div>
 
-          {/* Enlace de Pago Lemonsqueezy */}
+          {/* Enlace de Pago Stripe */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Enlace de Pago Lemon Squeezy (URL de Checkout)
+              Enlace de Pago Stripe (URL de Checkout)
             </label>
             <Input
               type="text"
               value={formData.paymentLink}
               onChange={(e) => handleInputChange('paymentLink', e.target.value)}
-              placeholder="Ej: https://diegogalmarini.lemonsqueezy.com/checkout/buy/..."
+              placeholder="Ej: https://buy.stripe.com/..."
               disabled={modalMode === 'view'}
             />
           </div>

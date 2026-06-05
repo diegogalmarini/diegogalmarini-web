@@ -19,6 +19,7 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import { FirestoreErrorProvider } from './contexts/FirestoreErrorContext';
 import AdminAccessPage from './pages/AdminAccessPage';
 import DirectAdminAccess from './pages/DirectAdminAccess';
@@ -120,6 +121,7 @@ const AppContent: React.FC = () => {
         <Route path="/blog/:slug" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPostPage /></Layout>} />
         <Route path="/terms-of-service" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><TermsOfServicePage /></Layout>} />
         <Route path="/privacy-policy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PrivacyPolicyPage /></Layout>} />
+        <Route path="/payment-success" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PaymentSuccessPage /></Layout>} />
 
         {/* English Routes */}
         <Route path="/en" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><HomePage onBookCallClick={handleOpenBookingModal} /></Layout>} />
@@ -135,6 +137,7 @@ const AppContent: React.FC = () => {
         <Route path="/en/blog/:slug" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><BlogPostPage /></Layout>} />
         <Route path="/en/terms-of-service" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><TermsOfServicePage /></Layout>} />
         <Route path="/en/privacy-policy" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PrivacyPolicyPage /></Layout>} />
+        <Route path="/en/payment-success" element={<Layout onBookCallClick={handleOpenBookingModal} onLoginClick={handleOpenLoginModal}><PaymentSuccessPage /></Layout>} />
       </Routes>
       <BookingModal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal} preselectedPlanId={selectedPlanId} prefilledNotes={prefilledNotes} />
       <LoginModal isOpen={isLoginModalOpen} onClose={handleCloseLoginModal} />
